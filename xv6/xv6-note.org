@@ -1,0 +1,1202 @@
+#+STARTUP: indent
+
+claass assistend zhz8512@mail.ustc.edu.cn
+
+* Class Notes0
+** read me
+this is my note about the parallel and distribute operating systems
+copy right :tiankai 
+teacher: Hua Baojian
+website: http://css.ustcsz.edu.cn:8091/ats/lectures.html
+** the first view of the advance of software
+<<软件调试>> ———— 微软亚洲研究院的研究员 
+
+软件设计的思想 这是最重要的
+
+本课程研究： 并行的分布式的内核
+book: XV6 a simpple,Unix-like teaching opratring system
+
+*** DONE 打印书
+*** TODO lab 1 and homework1 and homework2
+*** DONE install and execute XV6
+** 
+* Class Notes1  
+** shell  @8000
+
+analyze the sh.c  // this is very import
+
+parsecmd : 语法分析 语法树
+
+shell的执行非常简单，首先 获得命令 然后 进行语法分析 然后直接 执行那个 
+parsecmd  @7850
+
+fork之后：父进程 复制自己完整的一份，这就是子进程  父子进程共享 fd ：文件描述符 
+父子共享一个描述符，可以进行通信
+
+
+fd @2114  
+
+**** exercise pipe 的分析
+shell 中的第一部分的分析是非常关键的
+关于pipe  pipefd[0] is read end of the pipe.and  pipe[1] is the write end of the pipe.
+ 
+* Class Notes2
+** what's the function of those ds es gs fs and ss segement?
+** what's the function of the TSS (task state segement) 
+** 
+* Class note3 about lock
+** Race ( 竞争条件)
+** muticore
+在写代码的时候，要时刻谨记有几个CPU执行这段代码，会不会产生死锁，如果产生死锁，怎么解救而死锁？
+@1222 
+@1237 start othe CPU,so now you must remeber the Race condition.
+
+@1274 startothers
+
+
+** 锁的实现
+** 加锁的原则
+- 接口上的锁
+要在接口上申明，需要那些锁
+- 递归锁， 这是要避免的
+#+BEGIN_SRC C
+f()
+{
+acquire(lk);
+...
+f(); // 递归调用，会产生死锁
+...
+realease(lk);
+}
+#+END_SRC
+- 锁的顺序
+
+容易形成死锁
+
+最好用一个锁，使用最少的锁使比较好的原则；如果必须需要多个锁，那么一定要注意锁的顺序
+
+* Read the book before class
+:PROPERTIES:
+:POST_DATE: 2014-05-27 06:20:37
+:UPDATE_DATE: 2014-05-27 06:20:37
+:POST_SLUG: read-the-book-before-class
+:END: 
+** chapter 0. Operating system interface
+
+
+** chapter 1. The first process
+**** The first process
+概括了一下这章的主要内容：在XV6第一次启动的时候到创建了第一个进程，
+在这个过程中发生了什么。主要是浏览一下xv6为了实现上述的功能所作的
+很重要的抽象
+**** Procss overview
+进程的抽象提供了一个私有的内存系统和地址空间，这些东西其他的进程是
+同样进程也为程序提供了表面上看起来的是一个私有的CPU，去执行他的程序。
+XV6使用page table的机制，为每个进程提供了自己的进程空间，XV6提供了分离的叶表机制
+来定义地址空间，
+kernel在内存中的位置是0x80100000.
+
+the layout of a virtual address space : 
+0 ~ 0x80000000 is the address space of usr
+0x80000000 ~ 0x80100000 is the address space of BIOS
+0x80100000 ~ 0xffffffff is the address space of the 0x80100000
+
+每个进程的状态都在struct proc （@2103）的数据结构中，进程的最重要的内核属性是
+：page table, kernel stack , run state
+
+每个进程都有两个stack，一个是usr stack，一个是 kernel stack (p->kstack(note: 这是进程状态中的一项))
+ 
+p->state；表明进程的状态：running，waiting, exiting 
+p->pgdir: 保存的是进程的页表（in the format the x86 hardware expects,页表的指针是与硬件有关的）
+当我们在执行程序的时候，页表的硬件会使用 p->pgdir来寻找页的结构
+
+**** Code: the first address space
+PC powers on -> BIOS -> bootloader -> entry -> kernel
+
+parse the function of entry (@1040),该函数的主要作用是：设置 page table,是kernel的虚拟地址到物理
+地址的转换成功。在执行entry执行之前，kernel只能映射到0x100000，这是因为页表机制还没有打开。
+
+parse entry： 需要阅读 ia32-3的页表的机制的实现那一章节，
+
+在entry执行之后，我们就可以把kernel映射到高地址了（0x8000 0000 + 0x0040 0000）
+
+entry的功能：打开的x86系统页表机制，其实就是在相应的硬件结构上附上相应的值，其中最主要的就是对p-pgdir
+的位置进行相应的赋值。然后将相应的esp修改为高地址的值，然后间接跳转到main.c的位置
+
+**** Code: creating the first process
+
+userinit 这个进程创建了系统的第一个进程，所以接下来我们就要分析这个进程的信息
+
+userinit -> alloproc(allocate proc)
+
+allproc的功能就是：在进程表中（process table）定义一个结构struct proc的结构体，然后进行相应的初始化
+struct proc的定义如下所示：
+#+BEGIN_SRC C
+// Per-process state
+struct proc {
+  uint sz;                     // Size of process memory (bytes)
+  pde_t* pgdir;                // Page table
+  char *kstack;                // Bottom of kernel stack for this process
+  enum procstate state;        // Process state
+  volatile int pid;            // Process ID
+  struct proc *parent;         // Parent process
+  struct trapframe *tf;        // Trap frame for current syscall
+  struct context *context;     // swtch() here to run process
+  void *chan;                  // If non-zero, sleeping on chan
+  int killed;                  // If non-zero, have been killed
+  struct file *ofile[NOFILE];  // Open files
+  struct inode *cwd;           // Current directory
+  char name[16];               // Process name (debugging)
+};
+#+END_SRC
+每一个新的进程都会调用alloproc，当时每次的第一个新进程才会调用userinit进程
+
+进程表的结构如下所示：
+#+BEGIN_SRC C
+struct {
+  struct spinlock lock;
+  struct proc proc[NPROC];
+} ptable;
+#+END_SRC
+通过上面的内容你可以看到，是由一个锁结构和一个proc的结构体构成的
+
+allocproc 设置新的PC（program counter）值，that will cause the new process’s kernel
+thread to first execute in forkret and then in trapret (2236-2241).
+
+
+allocproc 这个程序要好好的研究一下，这样才能把这个题目看懂
+#+BEGIN_SRC C
+static struct proc*
+allocproc(void)
+{
+  struct proc *p;
+  char *sp;
+
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    if(p->state == UNUSED)
+      goto found;
+  release(&ptable.lock);
+  return 0;
+
+found:
+  p->state = EMBRYO;
+  p->pid = nextpid++;
+  release(&ptable.lock);
+
+  // Allocate kernel stack.
+  if((p->kstack = kalloc()) == 0){
+    p->state = UNUSED;
+    return 0;
+  }
+
+  //allocate the stack
+  sp = p->kstack + KSTACKSIZE; 
+  
+  // Leave room for trap frame.
+  sp -= sizeof *p->tf;          
+  p->tf = (struct trapframe*)sp;
+  
+  // Set up new context to start executing at forkret,
+  // which returns to trapret.
+  sp -= 4;
+  *(uint*)sp = (uint)trapret; // @ trapasm.S
+
+  sp -= sizeof *p->context;
+  p->context = (struct context*)sp;
+  memset(p->context, 0, sizeof *p->context); 
+  p->context->eip = (uint)forkret;
+
+  return p;
+}
+#+END_SRC
+
+从 *forkret* 返回的到trapret，trapret的函数是用汇编语言写的如下所示：
+#+BEGIN_SRC C
+ # Return falls through to trapret...
+.globl trapret
+trapret:
+  popal
+  popl %gs
+  popl %fs
+  popl %es
+  popl %ds
+  addl $0x8, %esp  # trapno and errcode
+  iret
+#+END_SRC  
+
+这个地方要好好的研究一下
+当把第一个进程设置好了之后，程序会运行一小段的汇编代码 initcode.S
+*initcode.S* 的代码如下所示：
+#+BEGIN_SRC C
+# exec(init, argv)
+.globl start
+start:
+  pushl $argv
+  pushl $init
+  pushl $0  // where caller pc would be
+  movl $SYS_exec, %eax
+  int $T_SYSCALL
+
+# for(;;) exit();
+exit:
+  movl $SYS_exit, %eax
+  int $T_SYSCALL
+  jmp exit
+
+# char init[] = "/init\0";
+init:
+  .string "/init\0"
+
+# char *argv[] = { init, 0 };
+.p2align 2
+argv:
+  .long init
+  .long 0
+
+#+END_SRC
+然后allocproc程序接下来要对trap frame进行初始化了，设置cs，等内容，特别的还要把程序指针的地址设为0，
+也就是汇编代码initcode.S在内存中的地址
+
+**** Code: running the first process
+现在已经准备好了第一个进程的状态已经准备好了，所以我们接下来要运行它，
+
+下面程序会调用mpmain-> scheduler 
+
+**** The first system call:exec
+第一个进程是由initcode.S 启动的，
+#+begin_src C
+# exec(init, argv)
+.globl start
+start:
+  pushl $argv
+  pushl $init
+  pushl $0  // where caller pc would be
+  movl  $SYS_exec, %eax
+  int   $T_SYSCALL      // *if all goes well , it never returns 
+
+# for(;;) exit();       // if  exec failed . initcode.s invoke exit() 
+exit:
+  movl $SYS_exit, %eax   
+  int $T_SYSCALL
+  jmp exit
+
+# char init[] = "/init\0";
+init:
+  .string "/init\0"
+
+# char *argv[] = { init, 0 };
+.p2align 2
+argv:
+  .long init
+  .long 0
+
+#+end_src
+
+**** Real world
+**** Exercise 
+** chapter 2. Page table
+**** Page tables overview
+**** paging hardware
+**** process address space
+PTE_U: 控制一个用户成程序是否可以使用这个页：（PTE_U control whether user pragrams are allowed to use page）
+
+**** Code :creating an address space
+walkpgdir : 模仿叶表的寻址过程，也就是从vitural address 到 physcial address 的地址
+
+
+**** pyhscall memory allocation
+内核需要在运行的时候动态的分配和释放物理空间，它一次性的释放或者分配4096 byte的空间，它通过跟踪叶表本身的一个
+空闲叶表的链表来进行叶表的释放和分配。
+**** Code : physicall memory allocator（物理地址分配器）
+为什么会有 kinit1 和 kinit2呢？
+
+
+**** User part of an address space
+**** Code :exec
+exec : 创建用户部分的地址空间
+
+exec的执行过程：
+1: 找到当前的节点
+** chapter 3. Traps,interrupts and drivers
+** chapter 4. Locking
+
+
+
+
+** chapter 5. Scheduling
+** chapter 6. File system
+** appdendix A.
+*** Pc hardware
+*** Process and memory
+*** I/O 
+** appdendix B.
+*** Code : Assembly bootstrap
+*** Code : C bootstrap
+*** Real world
+*** Exercise
+
+
+* Read the book
+*** 1. running and debugging xv6
+the contens of the homework is file:/home/tiankai/documents/parallel-and-distribute-system/Homework-running-and-debugging-xv6.html
+**** 1. platform
+
+os: ubuntu 12.04 LTS X86_64 
+
+不同的系统的具体的安装方式可能不同，我只是按照自己的电脑上的配置进行安装
+
+**** install the qemu 
+-shell cmd
+
+$sudo apt-get install qemu
+
+- *modify the Makefile in the directory of xv6(this step is very important)*  
+Note: For those who can't find QEMU executable, please check first if you have installed QEMU for i386 (not x86_64) architecture. Then change QEMU variable in Makefile to be your working QEMU executable (typically qemu-system-i386). Replace the line
+
+#QEMU =
+with
+QEMU = /usr/bin/qemu-system-i386    *this is the default directory of qmeu,and your's could be different*
+
+*** 2. bootstrap and X86 assembly
+the contens of the homework is file:/home/tiankai/documents/parallel-and-distribute-system/Homework2.html
+
+**** read the paper A Guide to Programming Intel IA32 PC Architecture
+***** 1. IA32 proecessor has three operating nodes by Kai Li
+-Real-address mode
+operating system code runs in the same mode as the user applications
+
+-Protected mode
+modern operating system use this mode
+
+-System management mode 
+This mode is designed for fast state snapshot and resumption. It is useful for power management
+****** Registers
+
+
+
+*General-purpose register*
+- EAX: AH(8) + AL(8) = AX(16)  
+- EBX
+- ECX
+- EDX:  
+- ESI: BP(16)
+- EDI: SI(16)
+- EBP: DI(16)
+- ESP: SP(16)
+
+*segement regieter*
+- CS: code segment register 
+- SS: stack segment register
+- DS,ES,FS,GS: data segment register
+
+*EFLAGS register(标志寄存器)*
+
+| Function                        | EFLAGS Register bit or bits |
+|---------------------------------+-----------------------------|
+| ID Flag                         |                  21(system) |
+| virtual interrupt pending (vip) |                          20 |
+| virtual interrupt flags (vif)   |                          19 |
+| Alignmetn check (AC)            |                          18 |
+| virtual 8086 mode (VM)          |                          17 |
+| resume flag (RF)                |                          16 |
+| nested task (NT)                |                          14 |
+| I/O privilege level(IOPL)       |                    13 to 12 |
+| Overflow Flag(OF)               |                          11 |
+| Direction Flag(DF)              |                          10 |
+| trap enable flag (IF)           |                           8 |
+| sign flag(SF)                   |                    7(staus) |
+| zero flag(ZF)                   |                           6 |
+| Auxiliary Carry Flag(AF)        |                           4 |
+| parity flag                     |                           2 |
+| carry flag                      |                  0 (status) |
+|                                 |                             |
+
+
+*EIP register*
+
+The EIP register (or instruction pointer) can also be called "program counter." 
+****** Assmbler Directive
+The Gnu assembler directive names begin with a period "." and the rest are letters in lower case.  Here are some examples of commonly used directives:
+. ascii "string foo" defines an ASCII string "string foo"//后边没有“0”
+
+. asciz "string foo" defines an ASCII string "string foo" with a zero at the end //后边有“0”
+
+. string "string foo" is the same as .asciz "string foo" // 与asciz相同
+
+. align 4 aligns the memory at double-word boundary
+
+. byte 10, 13, 0 defines three bytes // 8位   byte and bit is different
+
+. word 0x0456, 0x1234 defines two words // 16位
+
+. long 0x001234, 0x12345 defines two long words // 32位
+
+. equ STACK_SEGMENT, 0x9000 sets symbol STACK_SEGMENT the value 0x9000 //相当于一个宏定义
+
+. globl symbol ：makes  "symbol" global (useful for defining global labels and procedure names)
+
+. code16 tells the assembler to insert the appropriate override prefixes so the code will run in real mode.
+
+****** Data type
+IA32 provides four data types: a byte (8 bits), a word (16 bits), a double-word (32 bits), and a quad-word (64 bits). 
+Note that a word is "word" in Gnu assembler and a double-word is equivalent to "long" in Gnu assembler.
+
+在汇编语言中的的定义.lang 就是定义一个 .double word。其实就是定义一个32位的数，这个数可以用来当做地址，
+也是直接当做变量
+
+**** Processor Reset
+what's the cold boot ? powering up a system
+what's the warm boot ? three keys CTRL-ALT-DEL
+start the processors: BIOS -> botstrap loader(the address 0:7c00 in the memory)
+
+**** Assembly Programming
+
+#+CAPTION: This is an example for assembly program 
+#+NAME: this the assembly programme
+[[~/picture/asm.png]]
+
+
+**** inline assembly 
+
+**** Dispaly Memory
+PC's display RAM is mapped into memory space.  One can write directly to the screen by writing to the display RAM starting at 0xb800:0000. Each location on the screen requires two bytes---one to specify the attribute (Use 0x07 for white color) and the second for the character itself. The text screen has 25 lines and 80 characters per line.  So, to write to i-th row and j-th column, you write the 2 bytes starting at offset ((i-1)*80+(j-1))*2.
+So, the following code sequence writes the character 'K' (ascii 0x4b) to the top left corner of the screen.
+
+#+BEGIN_SRC C
+ movw 0xb800,%bx
+ movw %bx,%es
+ movw $0x074b,%es:(0x0)
+#+END_SRC
+This code sequence is useful for debugging programs during booting.
+
+
+**** the pc's physical address space 
+
+
+**** debugging the xv6 
+
+1. open two terminal windows
+int the first terminal run the command
+#+BEGIN_SRC sh
+make qemu-gdb
+#+END_SRC
+and in the second terminal run the command
+#+BEGIN_SRC sh
+gdb kernel 
+#+END_SRC
+Then you could debugging your system.
+
+
+
+
+**** Homework Question
+
+-1. what point does the processor start execting 32-bit code?
+ 
+the first intruction of the bootasm.S is 0x7c00 
+(gdb) si                                                    
+The target architecture is assumed to be i386                                                                       
+=> 0x7c31:      mov    $0x10,%ax                     
+          
+the point is the 0x00007c31
+
+-2. what exactly causes the switch for 16- to 32-bit mode?
+
+ activate A20 ,use the bootstrap GDT that makes virtual addresses map directly to physical address
+,open the protect mode
+
+-3. what is the last instruction of the boot loader execute? 
+
+   0x7d87:      mov    0x4(%ebx),%eax                                      
+   0x7d8a:      mov    %eax,0x8(%esp)                                     
+   0x7d8e:      mov    0x10(%ebx),%eax                                    
+   0x7d91:      mov    %eax,0x4(%esp)                                     
+   0x7d95:      mov    %esi,(%esp)                                        
+   0x7d98:      call   0x7cec     // this the last instrction of the boot loader excute                                             
+   0x7d9d:      mov    0x14(%ebx),%ecx                                    
+   0x7da0:      mov    0x10(%ebx),%eax                                    
+   0x7da3:      cmp    %eax,%ecx                                                                  
+   0x7da5:      jbe    0x7db4   
+
+ And, what's the first instruction of the kernel it just laod?
+
+(gdb) x/10 0x7cec                    
+   0x7cec:      push   %ebp          // this is the first intruction of the kernle in just load
+   0x7ced:      mov    %esp,%ebp      
+   0x7cef:      push   %edi           
+   0x7cf0:      push   %esi           
+   0x7cf1:      push   %ebx           
+   0x7cf2:      sub    $0x8,%esp      
+   0x7cf5:      mov    0x8(%ebp),%ebx  
+   0x7cf8:      mov    0x10(%ebp),%esi 
+   0x7cfb:      mov    %ebx,%edi       
+   0x7cfd:      add    0xc(%ebp),%edi  
+
+ the first intruction of the boot loader is    0x7d34 push %ebp
+
+ 
+-4. How does  the boot laoder decide how many sectors it must read in order to fetch the entir kernel from disk? 
+where does it find this information?
+
+boot loader 通过 解析kernel文件的前4096个字节，这4KB中包含kernel文件的程序头部表的
+信息，可以通过解析这个程序头部表，将kernel的每个段，都加载到内存当中，分析到底有多少个sector需要加载到内存中，
+
+ 
+
+
+**** my question 
+-1. real mode and protected mode
+you could read the blog http://blog.csdn.net/wukaiyu/article/details/1766804
+
+-2. the differens of logical address , linear address and pysical address
+
+you could read the blog http://blog.csdn.net/wxzking/article/details/5905214 and this blog http://laoxu.blog.51cto.com/4120547/1166661
+
+-3. in the file bootasm.S
+
+spin:
+   jmp spin    
+
+is this  the death loop ?
+
+-4. the BIOS' owner is the qmeu!
+
+
+-5. the assmbly instruction of bootasm.s
+#+BEGIN_SRC  C
+
+
+(gdb) x/10 
+   0x7c01:	xor    %ax,%ax
+   0x7c03:	mov    %ax,%ds
+   0x7c05:	mov    %ax,%es
+   0x7c07:	mov    %ax,%ss
+*seta20.1*
+   0x7c09:	in     $0x64,%al
+   0x7c0b:	test   $0x2,%al
+   0x7c0d:	jne    0x7c09
+   0x7c0f:	mov    $0xd1,%al
+   0x7c11:	out    %al,$0x64
+
+*seta20.2*
+   0x7c13:	in     $0x64,%al
+(gdb) x/10i
+   0x7c15:	test   $0x2,%al
+   0x7c17:	jne    0x7c13
+   0x7c19:	mov    $0xdf,%al
+   0x7c1b:	out    %al,$0x60
+
+   0x7c1d:	lgdtw  0x7c78 // the pointer is gdtdesc' address 
+   0x7c22:	mov    %cr0,%eax
+   0x7c25:	or     $0x1,%eax
+   0x7c29:	mov    %eax,%cr0
+   0x7c2c:	ljmp   $0x8,$0x7c31
+
+*start32*
+   0x7c31:	mov    $0xd88e0010,%eax
+(gdb) x/10
+   0x7c37:	mov    %ax,%es
+   0x7c39:	mov    %ax,%ss
+   0x7c3b:	mov    $0xe08e0000,%eax //??? this different
+   0x7c41:	mov    %ax,%gs
+   0x7c43:	mov    $0x7c00,%sp     // 入栈
+   0x7c46:	add    %al,(%bx,%si)
+   0x7c48:	call   0x7d32     // this pointer is the  function bootmain's(bootmain.c) address
+ 
+=> 0x7d32:	pop    %ebp  
+(gdb) si
+=> 0x7d33:	ret    //jmp
+0x00007d33 in ?? ()
+(gdb) si
+=> 0x7d59:	cmpl   $0x464c457f,0x10000
+0x00007d59 in ?? ()
+(gdb) si
+=> 0x7d63:	jne    0x7dc2
+0x00007d63 in ?? ()
+(gdb) si
+=> 0x7d65:	mov    0x1001c,%ebx
+0x00007d65 in ?? ()
+#+END_SRC
+-6.How to read the code bootmain.o ?
+
+
+
+
+*** 3. xv6 system calls
+
+Homework: xv6 system calls
+
+Submit your solutions before the beginning of the next lecture to any course staff.
+
+Part Zero: which CPU runs the first process?
+
+Xv6 is running on a machine configured with two cpus: CPU0 and CPU1. In this exercise, your job is to figure out on which CPU the first process "/init" is running.
+First, run xv6 with make qemu-gdb and gdb kernel, set a break point on function forkret and let gdb hit the break point:
+
+  $ b forkret
+  $ c
+And now print out the processes (if any) on both cpus:
+  $ p cpus[0].proc
+  $ p cpus[1].proc
+on which cpu the first process is running? the cpu 1 
+*result* 
+(gdb) p cpus[0].proc                                                        │                                                                           
+$1 = (struct proc *) 0x0                                                    │                                                                           
+(gdb) p cpus[1].proc                                                        │                                                                           
+$2 = (struct proc *) 0x8010ff54                                             │                                                                           
+(gdb)     
+
+
+Now, check the address of the process table and process 0 information:
+
+  $ p &ptable.proc    $3 = (struct proc (*)[64]) 0x8010ff54 
+  $ p ptable.proc[0].pid     $4 = 1 
+  $ p ptable.proc[0].name    $5 = "initcode\000\000\000\000\000\000\000" 
+what conclusion can you draw?
+现在执行的进程号是 ”1“ 现在执行的进程的名为”initcode“
+
+Challenge: note that the code is now in kernel space, can you write some code to
+ change this process to run on cpu0, before it enters user space? 
+这个地方 不会做 ？
+
+***** Part One: System call tracing
+
+Your first task is to modify the xv6 kernel to print out a line for each system call invocation. 
+It is enough to print the name of the system call and the return value;
+ you don't need to print the system call arguments.
+When you're done, you should see output like this when booting xv6:
+
+...
+fork -> 2
+exec -> 0
+open -> 3
+close -> 0
+$write -> 1
+ write -> 1
+
+That's init forking and execing sh, sh making sure only two file descriptors are open, 
+and sh writing the $ prompt(提示符).
+
+Hint: modify the syscall() function in syscall.c.
+
+Challenge: print the system call arguments.
+
+
+***** Part Two: Halt system call
+
+Your second task is to add a new system call to xv6. The main point of the exercise is for you to see
+ some of the different pieces of the system call machinery（结构）.
+Your new system call will halt xv6 by telling QEMU to exit. Here is some code that does that;
+ it needs to run in the kernel:
+#+begin_src C
+  char *p = "Shutdown";
+  for( ; *p; p++)
+     outb(0x8900, *p);
+#+end_src
+
+You should create a user-level program that calls your new halt system call; 
+here's some source you should put in halt.c:
+#+BEGIN_SRC C
+#include "types.h"
+#include "stat.h"
+#include "user.h"
+
+int
+main(int argc, char *argv[])
+{
+  halt();
+  return 0;
+}
+#+END_SRC
+
+In order to make your new halt program available to run from the xv6 shell, add _halt to the UPROGS 
+definition in Makefile.(修改makefile文件，)
+
+Your strategy for making a halt system call should be to clone all of the pieces of code that are 
+specific to some existing system call, for example the "uptime" system call. 
+You should grep for uptime in all the source files, using grep -n uptime *.[chS].
+
+When you're done, typing halt to an xv6 shell prompt should cause qemu to exit.（执行halt,引起qemu退出）
+
+Write down a few words of explanation for each of the files you had to modify in the process of 
+creating your halt system call.
+
+Challenge: add a dup2() system call.
+
+Turn in: Your explanations of the modifications for halt.
+
+*** 4. Interrupts and Exceptions in xv6
+*** 5. Locking
+**** Racing condition
+介绍了由竞争条件而引起的错误，从而引入了锁的
+
+ 
+* Lab
+*** 1. Booting and Managing CPUs
+**** Part 1: printing to the Conslole
+***** Exercise 1.
+Exercise 1. We have omitted a small fragment of code - the code necessary to print octal numbers 
+using patterns of the form "%o". Find and fill in this code fragment.
+***** quesion
+1. Explain the interface between vcprintf() in lib/cprintf.c and vprintfmt() in lib/printfmt.c.
+                  Specifically, how does vcprintf() tell vprintfmt() how to display a character?
+#+BEGIN_SRC C
+cprintf(const char *fmt,...);
+vcprintf(const char *fmt, va_list ap);
+vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
+#+END_SRC
+2. Explain the following from dev/video.c:
+
+#+BEGIN_SRC C
+1      if (crt_pos >= CRT_SIZE) {
+2              int i;
+3              memcpy(crt_buf, crt_buf + CRT_COLS,
+4			(CRT_SIZE - CRT_COLS) * sizeof(uint16_t));
+5              for (i = CRT_SIZE - CRT_COLS; i < CRT_SIZE; i++)
+6                      crt_buf[i] = 0x0700 | ' ';
+7              crt_pos -= CRT_COLS;
+8      }
+#+END_SRC
+这几行代码的目的是实现滚屏功能。当屏幕光标位置crt_pos超过一屏时，则将显存内容向前移动一行，并将最后一行都清空(写成空格)。
+
+
+
+3. For the following questions you might wish to consult GCC's calling convention on the x86.
+Trace the execution of the following code step-by-step:
+
+int x = 1, y = 3, z = 4;
+cprintf("x %d, y %x, z %d\n", x, y, z);
+- In the call to cprintf(), to what does fmt point? To what does ap point?
+
+
+- List (in order of execution) each call to cons_putc, va_arg, and vcprintf. For cons_putc, list its argument as well. For va_arg, list what ap points to before and after the call. For vcprintf list the values of its two arguments.
+
+4. Run the following code.
+    unsigned int i = 0x00646c72;
+    cprintf("H%x Wo%s", 57616, &i);
+What is the output? Explain how this output is arrived at in the step-by-step manner of the previous exercise. Here's an ASCII table that maps bytes to characters.
+The output depends on that fact that the x86 is little-endian. If the x86 were instead big-endian what would you set i to in order to yield the same output? Would you need to change 57616 to a different value?
+
+Here's a description of little- and big-endian and a more whimsical description.
+*Answer*
+
+He110 World
+
+57616的16进制是0xe110. 0x00646c72分别对应ascii码里的 '\0' 'd' 'l' 'r'
+
+如果大端存储的话，自然要反过来 0x726c6400。但是不需要改57616。
+
+
+5. In the following code, what is going to be printed after 'y='? (note: the answer is not a specific value.) Why does this happen?
+#+BEGIN_SRC C
+cprintf("x=%d y=%d", 3);
+#+END_SRC   
+x的值是3，当时y的值是不确定的，它的值是在x这个变量上面的值，但是这个值是不确定的!
+
+6. Let's say that GCC changed its calling convention so that it pushed arguments on the stack 
+in declaration order, so that the last argument is pushed last. How would you have to change 
+cprintf or its interface so that it would still be possible to pass it a variable number of arguments?
+
+将参数的顺序颠倒
+**** Part 2: Trap handling
+
+Exercise 6. Edit trapasm.S and trap.c and implement the features described above. 
+The macros TRAPHANDLER and TRAPHANDLER_NOEC in trapasm.S should help you, as well as the T_* defines 
+in inc/trap.h. You will need to add an entry point in trapasm.S (using those macros) for each trap 
+defined in inc/trap.h, and you'll have to provide _alltraps which the TRAPHANDLER macros refer to. 
+You will also need to modify trap_idt_init() to initialize the IDT to point to each of these entry 
+points defined in trapasm.S; the SETGATE macro will be helpful here.
+
+Hint: your _alltraps should:
+
+push values to make the stack look like a struct trapframe
+load CPU_GDT_KDATA into %ds and %es
+pushl %esp to pass a pointer to the trapframe as an argument to trap()
+call trap (can trap ever return?)
+Consider using the pushal and popal instructions; they fit nicely with the layout of the struct trapframe.
+
+We have provided a function trap_check() to test your trap handling code for a variety of traps 
+(though by no means all the exceptions the processor can generate). Make sure it reports success: 
+You should be able to get make grade to succeed on the trap handler test at this point.
+
+练习要求：编辑trapasm.S和trap.c 实现上面描述的功能，这些功能是：中断处理的进入和返回，嵌套中断，定义IDT，初始化IDT
+1. 初始化向量表 （0-31）
+
+其实对于所有的题目的流程都是一样的，都是从 kern/init.c开始的，
+#+BEGIN_SRC C
+void
+init(void)
+{
+	extern char start[], edata[], end[];
+
+	// Before anything else, complete the ELF loading process.
+	// Clear all uninitialized global data (BSS) in our program,
+	// ensuring that all static/global variables start out zero.
+	if (cpu_onboot())
+		memset(edata, 0, end - edata);
+
+	// Initialize the console.
+	// Can't call cprintf until after we do this!
+	cons_init();
+
+	// Lab 1: test cprintf and debug_trace
+	cprintf("1234 decimal is %o octal!\n", 1234);
+	debug_check();
+
+	// Initialize and load the bootstrap CPU's GDT, TSS, and IDT.
+	cpu_init();
+	trap_init(); //可以看出这个地方是trap_init()的初始化
+
+	// Physical memory detection/initialization.
+	// Can't call mem_alloc until after we do this!
+	mem_init();
+
+
+	// Lab 1: change this so it enters user() in user mode,
+	// running on the user_stack declared above,
+	// instead of just calling user() directly.
+	user();
+}
+#+END_SRC
+从代码中可以看出是trap_init() 这个函数,进行跟踪就可以进入
+#+BEGIN_SRC C
+void
+trap_init(void)
+{
+	// The first time we get called on the bootstrap processor,
+	// initialize the IDT.  Other CPUs will share the same IDT.
+	if (cpu_onboot())              // Returns true if we're running on the bootstrap CPU
+		trap_init_idt();       // 初始化 IDT
+
+	// Load the IDT into this processor's IDT register.
+	asm volatile("lidt %0" : : "m" (idt_pd));     // 使用lidt命令装载初始化好了的IDT的地址
+
+	// Check for the correct IDT and trap handler operation.
+	if (cpu_onboot())                           // Returns true if we're running on the bootstrap CPU
+            trap_check_kernel(); // Check for correct handling of traps from kernel mode。在kernel模式下检测是否正确的中断处理
+}
+#+END_SRC
+
+
+
+
+**** Part 3: Privilege Levels and Protected Control Tranfer
+***** An example
+中断向量表：IDT
+TSS： task state segement :任务状态寄存器
+
+从当用户代码遇到一个divide 0 错误的时候，要从用户态切换到内核态，
+*步骤*
+1 使用ss0 和 eip0 寄存器保存 CPU_GDT_KDATA 和 &CPU->kstackhi
+2 保存ss ,old esp, old eflags, old cs ,old eip
+3 读取vector 0 ，设置 cs:eip 来执行异常处理程序
+4 异常处理程序接手控制权，
+
+
+*exercise 9* 修改cpu_init()，在cpu结构的适当位置设置tss段，在GDT中设置TSS 段描述符来执行他，SEGDESC16这个宏定义会对接下来的部分
+很有帮助，你可以这样使用这个宏定义
+#+BEGIN_SRC C
+c->gdt[...] = SEGDESC16(...)
+#+END_SRC
+GDT的项 CPU_GDT_TSS在kern/cpu.h中已经提供了。
+在GDT加载之后，在cpu_init()的最后，使用LTR命令，加载TSS，为了方便，我们在inc/x86.h中已经定义好了函数ltr()
+
+***** Entering user mode
+****** Exercies 10
+修改 kern/cpu.c 中的 cpu_boot，为用户模式代码和数据段
+****** Exercise 11
+修改init()的代码，使user()函数运行在用户态，
+***** Software Interrupts
+这一节讲的是软中断，X86 定义两个软终端，PIOS定义了第三种软中断
+- T_BRKPT: the breakpoint exception ,add breakpoint to debug process
+- T_OFLOW: overflow exception
+- T_SYSCALL: 自己定义的，并不是intel 保留的前32位的，syscall 定义的使 0x30,也就是48 ，使用init 调用 syscall
+
+****** Exercise 12
+修改 trap_init_idt(), 使用户模式下的代码可以通过软中断命令来调用 T_BRKPT 和 T_OFLOW,现在不用关心SYSCALL，我们会在
+下个实验中来实现这个功能，当我们在下一个试验中实现有用的系统调用。o
+**** Part 4: Physical page allocation
+***** Exercise 13 在kern/mem.c中，实现下面的函数 mem_init(),mem_alloc() ,mem_free()
+
+我们在同一个源文件中已经提供了mem_check(),这个函数检测了物理地址的分配。你应该启动PIOS，看看mem_check()是否报告正确。
+修改你的代码，是使它能够通过，你会发现添加你的assert()函数是非常有用的，我们的检测代码不能保证检测每一个可能的bug。
+
+- mem_init 初始化内存管理，将一些页设置为空的，并且注意有一些页是不能使用的。
+- mem_alloc 分配页
+- mem_free 释放页
+
+**** My Question
+下面的看寄存器的信息，为什么会有两排呢？
+
+一排是16进制表示的，一排是10进制表示的
+#+BEGIN_SRC C
+(gdb) info register                                                │                                                                  
+eax            0x105ec8 1072840                                    │                                                                  
+ecx            0x105f28 1072936                                    │                                                                  
+edx            0x105f28 1072936                                    │                                                                  
+ebx            0x10094  65684                                      │                                                                  
+esp            0x105e9c 0x105e9c                                   │                                                                  
+ebp            0x105ec8 0x105ec8                                   │                                                                  
+esi            0x10094  65684                                      │                                                                  
+edi            0xfdba   64954                                      │                                                                  
+eip            0x100438 0x100438 <debug_trace>                     │                                                                  
+eflags         0x6      [ PF ]                                     │                                                                  
+cs             0x8      8                                          │                                                                  
+ss             0x10     16                                         │                                                                  
+ds             0x10     16                                         │                                                                  
+es             0x10     16                                         │                                                                  
+fs             0x10     16                                         │                                                                  
+gs             0x10     16        
+#+END_SRC
+
+
+*** 2. Processes and Synchronization（进程和同步）
+**** Introduction
+本次实验主要包含四个方面的实现的内容
+- 同步；维护多核处理器的数据的一致性
+- 进程调度：在给定的时间段呢决定哪一个进程运行在哪一个CPU上，
+- 系统调用：实现系统调用，使进程可以调用和管理子进程
+- 优先权： 使用异步硬件中断，在进程中定期的进行切换
+**** Software Setup
+**** Part 1 Multiprocessor Synchronization
+***** Basic spinlock function
+
+***** Debugging Enhancements
+****** Exercise 1
+就是参照xv6的上面的代码，自己实现　锁的初始化，锁的获得，锁的释放
+
+
+***** Using Spinlocks
+****** Exercise 2
+使用前面定义好了的三个锁的功能，来实现上一部分的内存分配部分的加锁的情况
+
+**** Part 2 Creating and Scheduling Processes
+熟悉kern/proc.h and kern/proc.c,
+*my question*
+proc.h @47 what's the　meanging of  code "procstate sv"?
+
+****** 进程的四种状态
+- PROC_RUN:当前进程正在运行在某个CPU中，proc结构中的runcpu这个域应该指向当前执行该进程的CPU，在其他的时间，该域（runcpu）的值都是空的
+- PROC_READY:表明该进程已经被它的父进程初始化，并且已经准备好了开始运行，当时并没有在实际的CPU上运行，scheduler使用某些数据结构（一般是队列）对这些已经准备好了的进程进行跟踪，一般使用proc结构中的readynext域初始化为一个指针，指向在就绪进程的队列链
+- PROC_STOP:表示当前进程处于stop状态， 表明它消极被动被它的父进程设置为这个状态，处于stopped状态的进程，只有父进程启动它的时候才能执行，我们在接下来会使用PUT system call来描述它，被停止的进程可以维持保存的寄存器的状态，不过出了父进程的动作之外，没有其他的动作可以引起它的进程的切换。
+- PROC_WAIT: 是对stopped状态的补充，这意味着当前进程在等待它的一个子进程已经完成，通过stoped状态，来返回到父进程。
+
+***** Scheduling and Running Processes
+现在就是自己简单的实现一个scheduler的功能。这个scheduler可以非常简单到将所有的ready process保存在一个单一的队列中，并且使用循环的顺序实现它，
+
+本次实验目的需求是：
+- (a) 当前的scheduler必须正常工作，即使是在一个多核的系统中，不能丢失进程和破坏已经装备好的进程。
+- (b) 假设scheduler不能饿死进程
+
+我们的任务就是在kern/proc.c 中实现一些函数
+- proc_ready(proc *p): 将进程的状态设置为PROC_READY,并把它插入到 ready queue ，使其他的CPU在不远的将来通过调用scheduler来执行该进程。
+- proc_sched(void): 从ready queue中移除默写队列并且运行它，
+- proc_run(proc *p)：设置进程ｐ的状态为PROC_RUN，
+- proc_yield(trapfram *tf)：将当前正在运行的进程的状态设置为PROC_READY，并把CPU让它其他的已经准备好了的进程
+
+*note*注意要使用spinlocks来保证能够在多进程的系统中运行。
+*think* 仔细的思考
+- 我们什么时候需要一个锁
+- 是否立刻的需要两个或者更多的锁。
+- 锁是否在多个进程结构中，如果在的话，你怎么保证永远不会死锁。 
+
+****** debug
+trap_check_kernel() succeeded!
+kernel warning at kern/mem.c:56: Assuming we have 1GB of memory!
+Physical memory: 1048576K available, base = 640K, extended = 1047552K
+mem_check: 261518 free pages
+kernel panic at kern/spinlock.c:38: current cpu have acquired the lock!
+
+  from 00102a62
+  from 00100b22
+  from 00100e60
+  from 00100aa2
+  from 001000e0
+  from 00100024
+
+单步跟踪的结果如下所示：
+
+#+BEGIN_SRC C
+#0  cputs (str=0x107d20 "kernel panic at kern/spinlock.c:38: ") at kern/cons.c:131                             
+#1  0x00105429 in vcprintf ( fmt=0x105bc9 "kernel panic at %s:%d: ",ap=0x107e64 "\221d\020") at lib/cprintf.c:62                  
+#2  0x00105452 in cprintf (fmt=0x105bc9 "kernel panic at %s:%d: ")
+    at lib/cprintf.c:74                                           
+#3  0x00100483 in debug_panic (file=0x106491 "kern/spinlock.c",   
+    line=38, fmt=0x10646c "current cpu have acquired the lock!\n") at kern/debug.c:43                                    
+#4  0x00102a62 in spinlock_acquire (lk=0x30e6a0) at kern/spinlock.c:38                                 
+#5  0x00100b22 in mem_free (pi=0x10e6b0) at kern/mem.c:176
+#6  0x00100e60 in mem_check () at kern/mem.c:226   
+#7  0x00100aa2 in mem_init () at kern/mem.c:126    
+#8  0x001000e0 in init () at kern/init.c:66        
+#9  0x00100024 in start () at kern/entry.S:44      
+#+END_SRC
+****** Exercise 3 
+实现上面的scheduling的功能，修改kern/init.c中的init()函数，并不是仅仅的编造一个trapframe，然后直接调用trapreturn()直接进入user space。它调用了proc_alloc() 来创建一个root process，启动这个进程保存eip 和esp，在用户空间执行user(),调用proc_ready(),来使进程就绪，然后最后调用proc_sched()来切换它，使它运行。
+现在你可以通过调用你的scheduler来进入用户空间，即使现在root进程还不能来创建其他的进程，在没有系统调用的情况下，你可能项通过创建多个多个root进程来检测你的
+scheduler进程是否有效，
+**** Part 3 Systme Calls
+现在内核可以有一种方式来创建和调度进程了，它要提够给用户进程代码一种方式来做一些有意义的事情，用户代码通过调用x86软中断来调用内核的功能。
+***** Entering, completing and restarting system calls
+
+
+***** PIOS system call
+
+- sys_ put(const char *S); 
+- sys_ puts(uint32_t flags, uint8_t child, procstate *save, void *localsrc, void *childdest, size_t size);
+- sys_ get
+- sys_ ret
+
+
+
+**** Part 4: Preemption and trap reflection
+***** Preemption
+***** Trap Reflection
+*** 3. Vitural Memory
+* Homewrok
+** lazy page allocation
+*** part one  Eliminate allocation from sbrk()
+Your first task is to delete page allocation from the sbrk(n) system call implementation, which is function sys_sbrk() in
+sysproc.c. The sbrk(n) system call grows the process's memory size by n bytes, and then returns the start of the newly allocated
+region (i.e., the old size). Your new sbrk(n) should just increment the process's size (proc->sz) by n and return the old size. It should not allocate memory -- so you should delete the call to growproc().
+
+Try to guess what the result of this modification will be: what will break?
+会发生缺叶中断
+
+
+*** Part Two: Lazy allocation
+
+Modify the code in trap.c to respond to a page fault from user space by mapping a newly-allocated page of physical memory at
+ the faulting address, and then returning back to user space to let the process continue executing. You should add your code
+ just before the cprintf call that produced the "pid 3 sh: trap 14" message. Your code is not required cover all corner cases
+ and error situations; it just needs to be good enough to let sh run simple commands like echo and ls.
+*task* 修改trap.c的文件，可以使处理缺页中断，
+Hint: look at the cprintf arguments to see how to find the virtual address that caused the page fault.
+
+virtual address is 0x4004
+#+BEGIN_SRC C
+pid 3 sh: trap 14 err 6 on cpu 0 eip 0x12f1 addr 0x4004--kill proc
+#+END_SRC
+Hint: steal code from allocuvm() in vm.c, which is what sbrk() calls (via growproc()).
+为用户分配可用的 page
+#+BEGIN_SRC C
+// Allocate page tables and physical memory to grow process from oldsz to
+// newsz, which need not be page aligned.  Returns new size or 0 on error.
+int
+allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
+{
+  char *mem;
+  uint a;
+
+  if(newsz >= KERNBASE)
+    return 0;
+  if(newsz < oldsz)
+    return oldsz;
+
+  a = PGROUNDUP(oldsz); // what's the values of a ?
+  for(; a < newsz; a += PGSIZE){
+    mem = kalloc();
+    if(mem == 0){
+      cprintf("allocuvm out of memory\n");
+      deallocuvm(pgdir, newsz, oldsz);
+      return 0;
+    }
+    memset(mem, 0, PGSIZE);
+    mappages(pgdir, (char*)a, PGSIZE, v2p(mem), PTE_W|PTE_U);
+  }
+  return newsz;
+}
+#+END_SRC
+Hint: use PGROUNDDOWN(va) to round the faulting virtual address down to a page boundary（叶边界）.
+
+Hint: break or return in order to avoid the cprintf and the proc->killed = 1.
+
+ Hint: you'll need to call mappages(). In order to do this you'll need to delete the static in the declaration of mappages() in
+vm.c, and you'll need to declare mappages() in trap.c. Add this declaration to trap.c before any call to mappages():
+
+      int mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm);
+
+Hint: you can check whether a fault is a page fault by checking if tf->trapno is equal to T_PGFLT in trap().
+
+If all goes well, your lazy allocation code should result in echo hi working. You should get at least one page fault (and thus lazy
+allocation) in the shell, and perhaps two.
+
+By the way, this is not a fully correct implementation. See the challenges below for a list of problems we're aware of.
+
+Challenges: Handle negative sbrk() arguments. Handle error cases such as sbrk() arguments that are too large. Verify that fork()
+and exit() work even if some sbrk()'d address have no memory allocated for them. Correctly handle faults on the invalid page below
+the stack. Make sure that kernel use of not-yet-allocated user addresses works -- for example, if a program passes an sbrk()
+-allocated address to read().
+
+Turn in: The code that you added to trap.c.
+**** hint:
+- 修改的是trap.c 中的T_PGFLT选项，其实就是让trap能够处理缺页中断
+- 从vm.c中的allocuvm借鉴代码，这段代码使sbrk()调用的，
+- 使用 PGROUNDOWN(va)，处理出错页虚拟地址，对齐到页边界
+- break 和 return 的目的是为了避免 cprintf 和 proc-killed = 1
+- 你应该调用mappages()
+- 你可以检测是否是一个缺页中断错误， tf->trapno == T_PGLT
+
+**  xv6 CPU alarm 
+ 添加一个system call: alarm(interval handler) 
+ 在系统中新建一个文件 alarmtest.c 用来测试syscall alarm
+*** hint 
+- 在user.h中正确的申明 ::done
+- syscall : sys_alarm() 应该保存时钟间隔和执行handler函数的指针，在proc structure 中，看 proc.h
+- sys_alarm 已经实现好了 ::done
+- 你需要追踪，自从最后alarm handler调用开始，一共多少个ticks，你需要增加一个在数据结构 proc 中 有新的域，你可以在proc.c 中的allocproc()来进行初始化。
+也就是说在proc中要添加一个新的域，来进行时钟中断，
+
+这一步要修改proc.c 中的 allocproc函数 ::done 
+
+- 在每一个tick， 时钟都会强制的进行中断，你应该在 trap 中的 T_IRQ0 + IRQ_TIMER 增加一些代码。
+note： 在T_IRQ0 + IRQ_TIMER 处添加一些代码，添加什么代码呢？
+- 如果这这里有一个进程正在运行，并且这个时间中断来自于用户空间的进程， 你只需要操作的进程时钟tick
+#+BEGIN_SRC C
+ if(proc && (tf->cs & 3) == 3) ...
+#+END_SRC
+
+???
+- 在你的 IRQ_TIMER中，当一个进程的时钟满了之后，你想引起它来执行他的handler，你该如何做呢？
+- 你可以查看alarmtest程序的汇编程序armtest.asm
+- 你可以使用单CPU来查看中断发生的时候，发生了什么，你可以通过下面n的命令来实现 
+#+BEGIN_SRC shell
+make CPUS=1 qemu
+#+END_SRC
+ ::done
+- 当调用handler的时候，如果你的解决法案没有保存caller的寄存器使 OK的，也就是不用保存调用者的寄存器的内容
+* Intel IA32-3
+** chapter 4
+*** 三种段寄存器的结构 @ia32-3 page：107
+
+- descriptor type (bit 12 at second doubleword ),决定段描述符是系统段，代码段，还是数据段
+- type field （bits 8 through 11 in the second doubleword） 决定代码，数据和系统段的类型
+- limit field （bits 0 through 15 of the first doubleword）对数据段来说，和G flag 和 E flag 共同决定段的大小
+- G flag （bits 23 in the second doubleword of a segment descriptor）见上limit field
+- E flag  （bits 10 in the second doubleword of a data-segement dsecriptor） 同上
+- (DPL) descriptor privilege level （bits13 and 14 in the second doubleword ）决定段的优先级
+- (RPL) requested privilege level (bits 0 and 1 of any segment selector) 指定段选择子需要的优先级
+- current privilege level （bits 0 and 1 of the CS segment register） 指明当前进程的优先级
+- User/Supervisor flag （bits 2 of page-directory or page-table entry） 决定也得类型，user or supervisor
+- Read/write flag (bit 1 of page-directory or page-table entry)决定 页的可访问的类型，只读或者读写
+
+* Exam 
+** test and set spinlock AND  ticket spinlock
+*** ticket spinlock
+**** over view
+Nick creat the tick spin lock, in the Linux kernel  2.6.25
+the struct of tick spin lock is here
+| next    | owner   |
+|---------+---------|
+| 1 bytes | 1 bytes |
+the first value is the queue ticket , the second value is the dequeue ticket.
+当一个线程到来的时候，它原子性的获得并且增加queue ticket，接下来原子性的将ticket's value(增加之前的)与dequeue ticket's value进行比较，如果相当，线程就可以进入临界区，如果不相等，其他的线程一定在临界区中，该进程只能在本地忙等或者yield，当一个进程，离开共临界区的时候，他原子性的增减dequeue ticket's value的值，这就会使下一个等待的线程可以进入临界区
+**** advantages
+ticket spinlock 比其他的spinlocd算法的优势使他的公平性。正在等待的进程按照first-in first-out 的顺序进行调度，这是应该dequeue ticket 使递增的，这可以避免“饿死”。他也可以很有效的防止[[http://en.wikipedia.org/wiki/Thundering_herd_problem%20][Thundering herd problem]] ,这是因为一次只有一个进程试图进入临界区。ticket spinlock 可以比简单的基于test-and-set spinlock or exchange的spinlock，有更低的延迟。
+
+总结起来的优点有如下几条：
+1. 公平性
+2. 有效防止 Thundering herd problem
+3. 更低的延迟
+*** test-and-set 
+在计算机中，test-and-set命令是用来写内存地址并且返回原来值的原子的操作（不可中断）。 一般的情况下
