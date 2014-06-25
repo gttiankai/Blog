@@ -1,0 +1,424 @@
+#    -*- mode: org -*-
+
+
+Archived entries from file /home/tiankai/NoteAndroid/art.org
+
+
+* ART的优点？
+:PROPERTIES:
+:ARCHIVE_TIME: 2014-05-08 四 18:50
+:ARCHIVE_FILE: ~/NoteAndroid/art.org
+:ARCHIVE_OLPATH: 1. ART机制的简介
+:ARCHIVE_CATEGORY: art
+:END:
+
+据传言android5.0会将ART模式作为默认选项，所以art模式是未来的方向 
+
+* ART怎么保证与原来的基于dalvik虚拟机的程序进行兼容
+:PROPERTIES:
+:ARCHIVE_TIME: 2014-05-08 四 20:55
+:ARCHIVE_FILE: ~/NoteAndroid/art.org
+:ARCHIVE_OLPATH: 1. ART机制的简介
+:ARCHIVE_CATEGORY: art
+:END:
+*本小结的内容参考了罗升阳的博客《Android ART运行时无缝替换Dalvik虚拟机的过程分析》，[[http://blog.csdn.net/luoshengyang/article/details/18006645][请点击这里访问该博客]]*
+
+查看ART机制的源码之后，发现有三个目录比较值得研究
+- compiler：主要负责Dalvik字节码到本地代码的转换，在android系统中为libart-compiler.so
+- dex2oat： 完成dex文件到elf文件的转换，编译为dex2oat
+- runtime： Android ART运行时的源代码 编译为libart.so
+
+
+我们知道android程序试运行在dalvik虚拟机上面，android ART要想取代dalvik虚拟机，最好的方式也是实现一个“ART虚拟机”的方式
+这里说的“ART虚拟机”是指的实现的形式，ART虚拟机（libart.so）其实就是实现了一套完全兼容Java虚拟机的接口
+
+
+
+2. ART的优点
+3. ART机制的前景
+4. ART源码的分析
+5. 有了ART，我们可以做什么？（安全方向）
+6. ART Runtime 的启动的过程
+7. ART 中的dex2oat的分析
+   这个就是实现dex ——> oat文件格式的转换的过程
+8. ART 是怎么保证往前兼容的？
+9. ART 是怎么保证平台(mips,x86,arm)的的兼容性的？
+
+（1）ART 的启动过程，就是系统开启ART机制之后，系统如何进行启动的！
+	 与 原来的zygote虚拟机启动的格式相对比
+
+	 有个疑问 就是libart.so文件的作用是什么？
+
+	 Android系统是基于linux内核，既然oat文件是elf文件格式，为什么不可以直接运行呢？
+
+	 
+
+（2）ART 技术的文件的格式，
+	 dalvik技术 执行的dex格式的文件，
+	 art技术执行的是oat格式的文件，oat文件格式其实基于elf格式的一种私有的文件格式
+	 这个地方 需要看一下 oat格式和elf文件格式到底有什么不同
+	 
+（3）ART机制与dalvik虚拟机机制的不同在哪里？
+
+（4）ART虚拟机（libart.so）的作用是什么？
+
+
+
+* ART怎么保证与原来的基于dalvik虚拟机的程序进行兼容
+:PROPERTIES:
+:ARCHIVE_TIME: 2014-05-10 六 12:51
+:ARCHIVE_FILE: ~/NoteAndroid/art.org
+:ARCHIVE_CATEGORY: art
+:END:
+*本小结的内容参考了罗升阳的博客《Android ART运行时无缝替换Dalvik虚拟机的过程分析》，[[http://blog.csdn.net/luoshengyang/article/details/18006645][请点击这里访问该博客]]*
+
+查看ART机制的源码之后，发现有三个目录比较值得研究
+- compiler：主要负责Dalvik字节码到本地代码的转换，在android系统中为libart-compiler.so
+- dex2oat： 完成dex文件到elf文件的转换，编译为dex2oat
+- runtime： Android ART运行时的源代码 编译为libart.so
+
+同Dalvik机制的对比
+- dexopt ： dex -->odex
+- runtime: libdvm.so 解释执行dex文件
+
+*Question:*
+ 
+libart.so libdvm.so的区别
+libdvm.so 解释执行dex文件
+libart.so 提供了一套完全兼容Java虚拟机的接口
+
+我们知道android程序试运行在dalvik虚拟机上面，android ART要想取代dalvik虚拟机，最好的方式也是实现一个“ART虚拟机”的方式
+这里说的“ART虚拟机”是指的实现的形式，ART虚拟机（libart.so）其实就是实现了一套完全兼容Java虚拟机的接口
+
+
+#+CAPTION: 
+[[/home/tiankai/NoteAndroid/20140111165827656.jpg]]
+
+从上图我们可以知道，dalvik虚拟机和ART虚拟机都实现了三个抽象Java虚拟机的接口
+ 1. JNI_GetDefaultJavaVMInitArgs -- 获取虚拟机的默认初始化参数
+
+ 2. JNI_CreateJavaVM             -- 在进程中创建虚拟机实例
+
+ 3. JNI_GetCreatedJavaVMs        -- 获取进程中创建的虚拟机实例
+在android系统中，Dalvik虚拟机是现在libdvm.so,ART虚拟机实现在libart.so中，也就是说这两个so文件
+都实现了JNI_GetDefaultJavaVMInitArgs、JNI_CreateJavaVM和JNI_GetCreatedJavaVMs这三个接口，供外界调用。
+
+上图中的系统属性：persist.sys.dalvik.vm.lib，表示系统是使用Dalvik虚拟机还是使用ART模式
+persist.sys.dalvik.vm.lib 的值为libdvm.so 或者 为libart.so
+
+为了实现ART虚拟机无缝的替换Dalvik虚拟机的我们将从下面两个方面进行分析
+
+** 1. ART虚拟机的启动过程
+为了实现ART虚拟机无缝的替换Dalvik虚拟机，我们应该尽量的简单的，不修改太多的系统源代码的前提下进行替换
+
+
+Zygote虚拟机的创建过程
+
+Zygote 从AndroidRuntime::start开始（@frameworks/base/core/jni/AndroidRuntime.cpp）
+#+BEGIN_SRC
+void AndroidRuntime::start(const char* className, const char* options)  
+{  
+    ......  
+  
+    /* start the virtual machine */  
+    JniInvocation jni_invocation;  
+    jni_invocation.Init(NULL);       // 1. 初始化JNI环境
+    JNIEnv* env;  
+    if (startVm(&mJavaVM, &env) != 0) {  // 2.创建虚拟机
+        return;  
+    }  
+  
+    ......  
+  
+    /* 3. 在Zygote进程中加载指定的class
+     * Start VM.  This thread becomes the main thread of the VM, and will 
+     * not return until the VM exits. 
+     */  
+    char* slashClassName = toSlashClassName(className);  
+    jclass startClass = env->FindClass(slashClassName);  
+    if (startClass == NULL) {  
+        ALOGE("JavaVM unable to locate class '%s'\n", slashClassName);  
+        /* keep going */  
+    } else {  
+        jmethodID startMeth = env->GetStaticMethodID(startClass, "main",  
+            "([Ljava/lang/String;)V");  
+        if (startMeth == NULL) {  
+            ALOGE("JavaVM unable to find main() in '%s'\n", className);  
+            /* keep going */  
+        } else {  
+            env->CallStaticVoidMethod(startClass, startMeth, strArray);  
+  
+#if 0  
+            if (env->ExceptionCheck())  
+                threadExitUncaughtException(env);  
+#endif  
+        }  
+    }  
+      
+    ......  
+}  
+#+END_SRC
+AndroidRutime类的成员函数start最主要是做了以下三件事情
+  1. 创建一个JniInvocation实例，并且调用它的成员函数init来初始化JNI环境；
+
+  2. 调用AndroidRutime类的成员函数startVm来创建一个虚拟机及其对应的JNI接口，即创建一个JavaVM接口和一个JNIEnv接口；
+
+  3. 有了上述的JavaVM接口和JNIEnv接口之后，就可以在Zygote进程中加载指定的class了。
+
+通过上面的分析，可以看出第1件事情和第2件事情又是最关键的
+
+接下来我们看JniInvocation的源码（@libnativehelper/JniInvocation.cpp）
+
+#+BEGIN_SRC
+#ifdef HAVE_ANDROID_OS  
+static const char* kLibrarySystemProperty = "persist.sys.dalvik.vm.lib";   // 系统属性，用来选择使用ART还是Dalvik
+#endif  
+static const char* kLibraryFallback = "libdvm.so";  
+  
+bool JniInvocation::Init(const char* library) {  
+#ifdef HAVE_ANDROID_OS  
+  char default_library[PROPERTY_VALUE_MAX];  
+  property_get(kLibrarySystemProperty, default_library, kLibraryFallback);  
+#else  
+  const char* default_library = kLibraryFallback;  
+#endif  
+  if (library == NULL) {  
+    library = default_library;  
+  }  
+  
+  handle_ = dlopen(library, RTLD_NOW);  
+  if (handle_ == NULL) {  
+    if (strcmp(library, kLibraryFallback) == 0) {  
+      // Nothing else to try.  
+      ALOGE("Failed to dlopen %s: %s", library, dlerror());  
+      return false;  
+    }  
+    // Note that this is enough to get something like the zygote  
+    // running, we can't property_set here to fix this for the future  
+    // because we are root and not the system user. See  
+    // RuntimeInit.commonInit for where we fix up the property to  
+    // avoid future fallbacks. http://b/11463182  
+    ALOGW("Falling back from %s to %s after dlopen error: %s",  
+          library, kLibraryFallback, dlerror());  
+    library = kLibraryFallback;  
+    handle_ = dlopen(library, RTLD_NOW);  
+    if (handle_ == NULL) {  
+      ALOGE("Failed to dlopen %s: %s", library, dlerror());  
+      return false;  
+    }  
+  }  
+  if (!FindSymbol(reinterpret_cast<void**>(&JNI_GetDefaultJavaVMInitArgs_),  
+                  "JNI_GetDefaultJavaVMInitArgs")) {  
+    return false;  
+  }  
+  if (!FindSymbol(reinterpret_cast<void**>(&JNI_CreateJavaVM_),  
+                  "JNI_CreateJavaVM")) {  
+    return false;  
+  }  
+  if (!FindSymbol(reinterpret_cast<void**>(&JNI_GetCreatedJavaVMs_),  
+                  "JNI_GetCreatedJavaVMs")) {  
+    return false;  
+  }  
+  return true;  
+}
+#+END_SRC
+
+下面我们来看AndroidRuntime类成员函数startVm的实现
+#+BEGIN_SRC
+int AndroidRuntime::startVm(JavaVM** pJavaVM, JNIEnv** pEnv)  
+{  
+    ......  
+  
+    /* 
+     * Initialize the VM. 
+     * 
+     * The JavaVM* is essentially per-process, and the JNIEnv* is per-thread. 
+     * If this call succeeds, the VM is ready, and we can start issuing 
+     * JNI calls. 
+     */  
+    if (JNI_CreateJavaVM(pJavaVM, pEnv, &initArgs) < 0) {  
+        ALOGE("JNI_CreateJavaVM failed\n");  
+        goto bail;  
+    }  
+  
+    ......  
+}  
+#+END_SRC
+从上面的代码我们可以看出startVm调用了JNI_CreateJavaVM，接下来我们看这个函数（@libnativehelper/JniInvocation.cpp）
+#+BEGIN_SRC
+extern "C" jint JNI_CreateJavaVM(JavaVM** p_vm, JNIEnv** p_env, void* vm_args) {  
+  return JniInvocation::GetJniInvocation().JNI_CreateJavaVM(p_vm, p_env, vm_args);  
+}  
+
+jint JniInvocation::JNI_CreateJavaVM(JavaVM** p_vm, JNIEnv** p_env, void* vm_args) {  
+  return JNI_CreateJavaVM_(p_vm, p_env, vm_args);  
+}  
+#+END_SRC
+
+通过上面的分析，我们就很容易知道，Android系统通过将ART运行时抽象成一个Java虚拟机，
+以及通过系统属性persist.sys.dalvik.vm.lib和一个适配层JniInvocation，就可以无缝地
+将Dalvik虚拟机替换为ART运行时。这个替换过程设计非常巧妙，因为涉及到的代码修改是非常少的。
+
+
+** 2. Dex字节码翻译成本地机器码的过程
+简单来说Android应用程序的安装过程就是Android系统通过PackageManagerService来安装APK，
+在安装的过程，PackageManagerService会通过另外一个类Instalerl的成员函数dexopt来对APK里面的dex字节码进行优化：
+dexopt的代码如下（@frameworks/base/services/java/com/android/server/pm/Installer.java）
+#+BEGIN_SRC
+public final class Installer {  
+    ......  
+  
+    public int dexopt(String apkPath, int uid, boolean isPublic) {  
+        StringBuilder builder = new StringBuilder("dexopt");  
+        builder.append(' ');  
+        builder.append(apkPath);  
+        builder.append(' ');  
+        builder.append(uid);  
+        builder.append(isPublic ? " 1" : " 0");  
+        return execute(builder.toString());  
+    }  
+#+END_SRC
+Installer通过socket向守护进程installd发送一个dexopt请求，这个请求是由installd里面的函数dexopt来处理的：
+(@frameworks/native/cmds/installd/commands.c)
+#+BEGIN_SRC
+int dexopt(const char *apk_path, uid_t uid, int is_public)  
+{  
+    struct utimbuf ut;  
+    struct stat apk_stat, dex_stat;  
+    char out_path[PKG_PATH_MAX];  
+    char dexopt_flags[PROPERTY_VALUE_MAX];  
+    char persist_sys_dalvik_vm_lib[PROPERTY_VALUE_MAX];  
+    char *end;  
+    int res, zip_fd=-1, out_fd=-1;  
+  
+    ......  
+  
+    /* The command to run depend ones the value of persist.sys.dalvik.vm.lib */  
+    property_get("persist.sys.dalvik.vm.lib", persist_sys_dalvik_vm_lib, "libdvm.so");  
+  
+    /* Before anything else: is there a .odex file?  If so, we have 
+     * precompiled the apk and there is nothing to do here. 
+     */  
+    sprintf(out_path, "%s%s", apk_path, ".odex");  
+    if (stat(out_path, &dex_stat) == 0) {  
+        return 0;  
+    }  
+  
+    if (create_cache_path(out_path, apk_path)) {  
+        return -1;  
+    }  
+  
+    ......  
+  
+    out_fd = open(out_path, O_RDWR | O_CREAT | O_EXCL, 0644);  
+  
+    ......  
+  
+    pid_t pid;  
+    pid = fork();  
+    if (pid == 0) {  
+        ......  
+  
+        if (strncmp(persist_sys_dalvik_vm_lib, "libdvm", 6) == 0) {         // Dalvik虚拟机
+            run_dexopt(zip_fd, out_fd, apk_path, out_path, dexopt_flags);  //  执行dexopt
+        } else if (strncmp(persist_sys_dalvik_vm_lib, "libart", 6) == 0) {  // 使用ART虚拟机
+            run_dex2oat(zip_fd, out_fd, apk_path, out_path, dexopt_flags);  // 执行dex2oat
+        } else {  
+            exit(69);   /* Unexpected persist.sys.dalvik.vm.lib value */  
+        }  
+        exit(68);   /* only get here on exec failure */  
+    }   
+  
+    ......  
+}  
+#+END_SRC
+
+ 函数dexopt首先是读取系统属性persist.sys.dalvik.vm.lib的值，接着在/data/dalvik-cache目录中创建一个odex文件。
+这个odex文件就是作为dex文件优化后的输出文件。再接下来，函数dexopt通过fork来创建一个子进程。
+如果系统属性persist.sys.dalvik.vm.lib的值等于libdvm.so，那么该子进程就会调用函数run_dexopt来将dex文件优化成odex文件。
+另一方面，如果系统属性persist.sys.dalvik.vm.lib的值等于libart.so，那么该子进程就会调用函数run_dex2oat来将dex文件优
+化成oart文件，实际上就是将dex字节码翻译成本地机器码，并且保存在一个oat文件中。
+
+函数run_dexopt和run_dex2oat的实现如下所示（@frameworks/native/cmds/installd/commands.c）：
+#+BEGIN_SRC
+static void run_dexopt(int zip_fd, int odex_fd, const char* input_file_name,  
+    const char* output_file_name, const char* dexopt_flags)  
+{  
+    static const char* DEX_OPT_BIN = "/system/bin/dexopt";  
+    static const int MAX_INT_LEN = 12;      // '-'+10dig+'\0' -OR- 0x+8dig  
+    char zip_num[MAX_INT_LEN];  
+    char odex_num[MAX_INT_LEN];  
+  
+    sprintf(zip_num, "%d", zip_fd);  
+    sprintf(odex_num, "%d", odex_fd);  
+  
+    ALOGV("Running %s in=%s out=%s\n", DEX_OPT_BIN, input_file_name, output_file_name);  
+    execl(DEX_OPT_BIN, DEX_OPT_BIN, "--zip", zip_num, odex_num, input_file_name,  
+        dexopt_flags, (char*) NULL);  
+    ALOGE("execl(%s) failed: %s\n", DEX_OPT_BIN, strerror(errno));  
+}  
+// 运行dex2oat
+static void run_dex2oat(int zip_fd, int oat_fd, const char* input_file_name,  
+    const char* output_file_name, const char* dexopt_flags)  
+{  
+    static const char* DEX2OAT_BIN = "/system/bin/dex2oat";  
+    static const int MAX_INT_LEN = 12;      // '-'+10dig+'\0' -OR- 0x+8dig  
+    char zip_fd_arg[strlen("--zip-fd=") + MAX_INT_LEN];  
+    char zip_location_arg[strlen("--zip-location=") + PKG_PATH_MAX];  
+    char oat_fd_arg[strlen("--oat-fd=") + MAX_INT_LEN];  
+    char oat_location_arg[strlen("--oat-name=") + PKG_PATH_MAX];  
+  
+    sprintf(zip_fd_arg, "--zip-fd=%d", zip_fd);  
+    sprintf(zip_location_arg, "--zip-location=%s", input_file_name);  
+    sprintf(oat_fd_arg, "--oat-fd=%d", oat_fd);  
+    sprintf(oat_location_arg, "--oat-location=%s", output_file_name);  
+  
+    ALOGV("Running %s in=%s out=%s\n", DEX2OAT_BIN, input_file_name, output_file_name);  
+    execl(DEX2OAT_BIN, DEX2OAT_BIN,  
+          zip_fd_arg, zip_location_arg,  
+          oat_fd_arg, oat_location_arg,  
+          (char*) NULL);  
+    ALOGE("execl(%s) failed: %s\n", DEX2OAT_BIN, strerror(errno));  
+}  
+#+END_SRC
+这从里就可以看出，函数run_dexopt通过调用/system/bin/dexopt来对dex字节码进行优化，
+而函数run_dex2oat通过调用/system/bin/dex2oat来将dex字节码翻译成本地机器码。
+
+*注意，无论是对dex字节码进行优化，还是将dex字节码翻译成本地机器码，最终得到的结果*
+*都是保存在相同名称的一个odex文件里面的，但是前者对应的是一个dexy文件（表示这是一个优化过的dex），*
+*后者对应的是一个oat文件（实际上是一个自定义的elf文件，里面包含的都是本地机器指令）。*
+通过这种方式，原来任何通过绝对路径引用了该odex文件的代码就都不需要修改了。
+
+ 通过上面的分析，我们就很容易知道，只需要将dex文件的优化过程替换成dex文件翻译成本地机器码的过程，
+就可以轻松地在应用安装过程，无缝地将Dalvik虚拟机替换成ART运行时。
+
+应用程序的安装发生在两个时机，第一个时机是系统启动的时候，第二个时机系统启动完成后用户自行安装的时候。
+在第一个时机中，系统除了会对/system/app和/data/app目录下的所有APK进行dex字节码到本地机器码的翻译之外，
+还会对/system/framework目录下的APK或者JAR文件，以及这些APK所引用的外部JAR，进行dex字节码到本地机器码的翻译。
+这样就可以保证除了应用之外，系统中使用Java来开发的系统服务，也会统一地从dex字节码翻译成本地机器码。
+也就是说，将Android系统中的Dalvik虚拟机替换成ART运行时之后，系统中的代码都是由ART运行时来执行的了，
+这时候就不会对Dalvik虚拟机产生任何的依赖。
+
+
+7. ART 中的dex2oat的分析
+   这个就是实现dex ——> oat文件格式的转换的过程
+8. ART 是怎么保证往前兼容的？
+9. ART 是怎么保证平台(mips,x86,arm)的的兼容性的？
+
+（1）ART 的启动过程，就是系统开启ART机制之后，系统如何进行启动的！
+	 与 原来的zygote虚拟机启动的格式相对比
+
+	 有个疑问 就是libart.so文件的作用是什么？
+
+	Android系统是基于linux内核，既然oat文件是elf文件格式，为什么不可以直接运行呢？
+
+	 
+
+（2）ART 技术的文件的格式，
+	 dalvik技术 执行的dex格式的文件，
+	 art技术执行的是oat格式的文件，oat文件格式其实基于elf格式的一种私有的文件格式
+	 这个地方 需要看一下 oat格式和elf文件格式到底有什么不同
+
+（4）ART虚拟机（libart.so）的作用是什么？
+
+

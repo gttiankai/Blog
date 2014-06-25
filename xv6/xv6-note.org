@@ -730,8 +730,9 @@ Turn in: Your explanations of the modifications for halt.
 *** 5. Locking
 **** Racing condition
 介绍了由竞争条件而引起的错误，从而引入了锁的
-
- 
+*** 6. File system
+**** challenges
+1.  
 * Lab
 *** 1. Booting and Managing CPUs
 **** Part 1: printing to the Conslole

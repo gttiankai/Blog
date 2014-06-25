@@ -1,0 +1,93 @@
+
+* 多核计算比较重要的问题是
+** 互斥问题
+** 死锁问题
+** 饥饿问价
+当Alice和Bob的请求发生冲突的时候，总会是Bob的请求延迟，Bob的请求可能一致得不到满足。
+** 等待
+* lock
+** abortable locks 可撤销的锁
+** queue lock
+*** 缺点
+队列锁存在的问题；当队列锁中一个链断裂的时候，就会使后边的进程无法获得锁，这就是队列锁存在的问题
+所以当一个队列锁的退出的时候，必须改变链表的结构，使后边的锁能够得到重新链接到queue lock。所以这时候就需要abortable lock
+
+在锁的结构中添加一个节点 reference，它由三种状态，这三种状态是什么？
+这三种状态是；
+1 NULL ： 表示 锁没有实现，或者已经推出了（abort）
+2 available(这个是唯一的)， 表示 lock is free
+3 
+* Concurrent Object（并发对象）
+** 怎么实现并发对象
+多个进程，当对一个链表进行操作的时候，最简单的做法，一访问就就锁，操作结束之后释放锁，虽然实现起来非常的简单，当时效率比较低。所以我们的就是使用新的方式。
+
+当两个进程操作链表的时候，一个操作链表的head，一个操作链表的tail。在两个进程在操作的时候，在不加锁的情况下是可以并发的执行的。不会产生产生错误。
+** 怎么保证实现的是正确的
+保证合法的顺序执行，注意我们使用的是队列，所以我们要注意，并发队列的
+** read write
+read(0),是读取的“0”
+read(1),是读取的“1”
+* Book : The art of multiprocessor programming
+** chapter 2
+*** 书写java的结构
+一个比较好的书写java中的锁的结构化的方法，如下所示
+#+BEGIN_SRC java
+mutex.lock()
+try {
+    ...      // body
+} finally {
+    mutes.unlock();
+}
+#+END_SRC
+这种办法可以保证进入try程序块以前获得锁，在离开程序块时候释放锁，即使在程序块中的某些语句抛出异常。
+*** LockOne
+实现：
+#+BEGIN_SRC java
+// LockOne
+
+class LockOne implements Lock{
+    private boolean[] flag = new boolean[2];
+        // thread-local index , 0 or 1
+    public void lock(){
+        int i = ThreadID.get();
+        int j = 1 - i;
+        flag[i] = true;
+        while(flag[j])
+          ;
+    }
+    public void unlock()
+    {
+        int i = ThreadID.get();
+        flag[i] = false;
+    }
+}
+#+END_SRC
+缺陷：两个进程交叉执行的时候，会发生死锁，
+*** LockTwo
+缺陷：当一个进程完全先于另一个进程的时候就会出现死锁
+*** Peterson lock
+实现
+#+BEGIN_SRC java
+// peterson lock
+
+    class Peterson implements lock {
+        private volatile boolean[] falg = new boolean[2];
+        private volatile int victim;
+        public void lock(){
+            int i = ThreadID.get();
+            int j = 1 - i;
+            flag[i] = true;
+            victim = i;
+            while (flag[j] && victim == i)
+                {};
+        }
+        public void unlock(){
+            int i = ThreadID.get();
+            flag[i] = false;
+        }
+    }
+#+END_SRC
+结合了lockOne 和 LockTwo lock的优点,Peterson Lock是无饥饿，并且是死锁的。
+*note* :上面的锁都只能支持两个进程间的同步。
+*** 过滤锁
+
