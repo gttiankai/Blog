@@ -1181,6 +1181,7 @@ make CPUS=1 qemu
 - User/Supervisor flag （bits 2 of page-directory or page-table entry） 决定也得类型，user or supervisor
 - Read/write flag (bit 1 of page-directory or page-table entry)决定 页的可访问的类型，只读或者读写
 
+
 * Exam 
 ** test and set spinlock AND  ticket spinlock
 *** ticket spinlock
@@ -1200,4 +1201,48 @@ ticket spinlock 比其他的spinlocd算法的优势使他的公平性。正在�
 2. 有效防止 Thundering herd problem
 3. 更低的延迟
 *** test-and-set 
-在计算机中，test-and-set命令是用来写内存地址并且返回原来值的原子的操作（不可中断）。 一般的情况下
+the wiki-about-test is here [[http://en.wikipedia.org/wiki/Test-and-set][here]]
+在计算机中，test-and-set命令是用来写内存地址并且返回原来值的原子的操作（不可中断）。 一般的情况下一般是将 value 1 写入内存的相应的位置。
+如果多个进程同时访问同一个内存地址，如果一个进程当前正在执行test-and-set，其他的进程只有等到这个进程结束之后才能够进入。
+#+BEGIN_SRC c
+function Lock(boolean *lock)
+{
+// when the old value is 1, then the process loop.
+// when the old value is 0, then the process enter the critical section
+    while (test_and_set(lock) == 1)
+         ;
+}
+#+END_SRC
+** APIC about xv6
+** Question 1 : about the bootload
+the start local address is : 0x100000
+the address of function main : 0x103334
+the address of the  first intruction of _start : 0x10000c
+** Questuon 2
+*** 
+*** 画出这个时候的调用栈
+| stack   |
+|---------|
+| ss      |
+| esp     |
+| ....    |
+| eflages |
+|         |
+|         |
+|         |
+|         |
+*** lapiceoi()???
+** Question 3
+** Question 4
+buffer, 中间不能停止
+** Question 5 about the PIOS
+1. 数组没有进行没有初始化啊！
+2. 应该把 0 和 1 页，留出来，
+** Question 6
+为什么使用两套的 输出呢？
+kernel 提供的保护，使user的不能碰到硬件
+** Question 7
+1. user 不能修改所有的寄存器，当时当前代码修改了太多的寄存器的内容
+2. 加锁不正确
+3. 没有判断child 进程是不是存在的！@33
+4. 加锁不正确 @3
