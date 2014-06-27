@@ -732,7 +732,77 @@ Turn in: Your explanations of the modifications for halt.
 介绍了由竞争条件而引起的错误，从而引入了锁的
 *** 6. File system
 **** challenges
-1.  
+1. 文件系统需要在disk上的数据结构来表示已经命名的目录和文件，来保存 包含每个文件内容的身份，保存disk上的哪一块是空闲的。
+2. 文件系统必须支持 *crash recovery*，
+3. 不同的进程可能会在同一时间操作文件系统，所以必须同等的处理差异
+4. 访问disk比访问内存要慢得多。所以文件系统必须解决 in-memory cache of thees blocks.
+**** Overview
+***** 分层的文件系统
+| System call  | File descriptors            |
+| Pathnames    | Recursive lookup            |
+| Directories  | Directort inodes            |
+| Files        | Innodes and block allocator |
+| Transactions | logging                     |
+| Blocks       | Buffer cache                | 
+***** Blocks
+| block 0                  | boot sector                       |
+| block 1(superblock)      | contain metadata                  |
+| block 2                  | contain inodes                    |
+| block at the end of disk | a log (part of transaction layer) |
+
+
+the block 1 (the superblock) contains the file system size in the block,the number of data block, the number of inodes , the number of block.
+**** Buffer cache layer
+buffer cache layer has two jobs :
+- 同步对硬盘的访问，保证一次只能有一个block的 copy在内存中，并且保证只能由一个内核
+- cache popular block 保证不用从比较慢的disk中重复的读取
+
+**** Code ：Buffer cache
+***** Question 
+图中的竞争条件是怎么发生的？
+竞争条件的死锁是怎么发生的？
+
+**** Logging layer
+xv6为了解决crash recovery 问题，引进了log技术，当一个读写磁盘并不是进行操作磁盘，而是转变为了将需要的读写操作写在一个log文件中，并且将完成的读写操作标志为"complete"，当系统发生crash的时候，就直接考察在log文件中的数据。如果标志为complete，就执行相应的操作；如果不是complete，就会直接忽略这条命令。
+***** 当crash发生在写log的时候
+- 发生在写comple之前，那么忽略这条指令。
+- 如果发生在写complete之后，在crash之后也是可以恢复的。
+
+通过log技术就可以将disk operate 操作转换成了原子的，这就可以当发生crash的时候，如何恢复的问题。
+
+**** Log design
+***** the location of log
+磁盘所有的log信息都存放在磁盘的最后的一个扇区中，这个最后的扇区包含了所有的head block。
+***** head block
+the head block contains an arrary of sector numbers, one for each of logged data blocks.
+
+
+
+***** concurrent transaction
+为了避免产生错误，系统禁止了concurrent transaction，xv6为了防止concurrent transaction问题，xv6的解决办法是禁止concurrent transaction。
+
+
+***** question
+如果想打开concurrent transaction，
+**** Code: logging
+
+**** Code : Blocj allocater
+
+**** Inodes
+
+**** Code: Inodes
+
+**** Code: Inode content
+
+**** Code: Directory layer
+
+**** Code: Path names
+
+**** File descriptor layer
+
+**** Code:System calls
+
+**** Real world
 * Lab
 *** 1. Booting and Managing CPUs
 **** Part 1: printing to the Conslole
@@ -1138,7 +1208,7 @@ Turn in: The code that you added to trap.c.
 - 你应该调用mappages()
 - 你可以检测是否是一个缺页中断错误， tf->trapno == T_PGLT
 
-**  xv6 CPU alarm 
+** xv6 CPU alarm 
  添加一个system call: alarm(interval handler) 
  在系统中新建一个文件 alarmtest.c 用来测试syscall alarm
 *** hint 
