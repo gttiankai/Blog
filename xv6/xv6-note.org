@@ -1,7 +1,5 @@
 #+STARTUP: indent
-
 claass assistend zhz8512@mail.ustc.edu.cn
-
 * Class Notes0
 ** read me
 this is my note about the parallel and distribute operating systems
@@ -336,7 +334,6 @@ exec的执行过程：
 *** Real world
 *** Exercise
 
-
 * Read the book
 *** 1. running and debugging xv6
 the contens of the homework is file:/home/tiankai/documents/parallel-and-distribute-system/Homework-running-and-debugging-xv6.html
@@ -620,9 +617,6 @@ is this  the death loop ?
 #+END_SRC
 -6.How to read the code bootmain.o ?
 
-
-
-
 *** 3. xv6 system calls
 
 Homework: xv6 system calls
@@ -786,22 +780,12 @@ the head block contains an arrary of sector numbers, one for each of logged data
 如果想打开concurrent transaction，
 **** Code: logging
 
-**** Code : Blocj allocater
+**** Code: Blocj allocater
 
 **** Inodes
+当创建一个新的inode的时候，xv6创建一个ialloc函数。该函数扫描硬盘上的inode structures，一次扫描一个，寻找一个空闲的列表。
 
-**** Code: Inodes
-
-**** Code: Inode content
-
-**** Code: Directory layer
-
-**** Code: Path names
-
-**** File descriptor layer
-
-**** Code:System calls
-
+***** 
 **** Real world
 * Lab
 *** 1. Booting and Managing CPUs
@@ -1251,7 +1235,6 @@ make CPUS=1 qemu
 - User/Supervisor flag （bits 2 of page-directory or page-table entry） 决定也得类型，user or supervisor
 - Read/write flag (bit 1 of page-directory or page-table entry)决定 页的可访问的类型，只读或者读写
 
-
 * Exam 
 ** test and set spinlock AND  ticket spinlock
 *** ticket spinlock
@@ -1285,9 +1268,21 @@ function Lock(boolean *lock)
 #+END_SRC
 ** APIC about xv6
 ** Question 1 : about the bootload
+*** b)
 the start local address is : 0x100000
 the address of function main : 0x103334
 the address of the  first intruction of _start : 0x10000c
+当执行_start的第一条语句的时候，此时eip的指针的值为：0x1000c
+
+*** c) page table
+entry.S中的_start()函数开启了boottrap page table.
+**** 该页表的目的是什么？
+使虚拟地址可以映射到物理地址
+**** 在这个页中的每个entry（入口）都是必须的吗？
+并不是每个页表都是必须的，只有两个是必须的。
+**** 如果我们忽略其中的任何的一个入口会怎么样？
+使使用该入口进行映射的页
+该页表打开一个4M大小的页，然后这个时候我们就可以通过使用虚拟地址，当时此时还是映射在这个地方
 ** Questuon 2
 *** 
 *** 画出这个时候的调用栈
@@ -1310,7 +1305,7 @@ buffer, 中间不能停止
 2. 应该把 0 和 1 页，留出来，
 ** Question 6
 为什么使用两套的 输出呢？
-kernel 提供的保护，使user的不能碰到硬件
+kernel 提供的保护，使user的不能碰到硬件 
 ** Question 7
 1. user 不能修改所有的寄存器，当时当前代码修改了太多的寄存器的内容
 2. 加锁不正确

@@ -1,0 +1,2 @@
+* stack
+** 使用compareAndset，将push的实现进行原子化。
