@@ -1,4 +1,3 @@
-#+STARTUP: indent
 claass assistend zhz8512@mail.ustc.edu.cn
 * Class Notes0
 ** read me
@@ -21,7 +20,7 @@ book: XV6 a simpple,Unix-like teaching opratring system
 * Class Notes1  
 ** shell  @8000
 
-analyze the sh.c  // this is very import
+analyze tche sh.c  // this is very import
 
 parsecmd : 语法分析 语法树
 
@@ -295,6 +294,7 @@ argv:
 **** Exercise 
 ** chapter 2. Page table
 **** Page tables overview
+xv6使用比较简单的页映射方式：映射不同的虚拟地址到同一个地址，在一个地址空间中多次的映射到同一个物理地址。
 **** paging hardware
 **** process address space
 PTE_U: 控制一个用户成程序是否可以使用这个页：（PTE_U control whether user pragrams are allowed to use page）
@@ -302,13 +302,11 @@ PTE_U: 控制一个用户成程序是否可以使用这个页：（PTE_U control
 **** Code :creating an address space
 walkpgdir : 模仿叶表的寻址过程，也就是从vitural address 到 physcial address 的地址
 
-
 **** pyhscall memory allocation
 内核需要在运行的时候动态的分配和释放物理空间，它一次性的释放或者分配4096 byte的空间，它通过跟踪叶表本身的一个
 空闲叶表的链表来进行叶表的释放和分配。
 **** Code : physicall memory allocator（物理地址分配器）
 为什么会有 kinit1 和 kinit2呢？
-
 
 **** User part of an address space
 **** Code :exec
@@ -451,8 +449,7 @@ start the processors: BIOS -> botstrap loader(the address 0:7c00 in the memory)
 
 #+CAPTION: This is an example for assembly program 
 #+NAME: this the assembly programme
-[[~/picture/asm.png]]
-
+[[/home/tiankai/git-hub/Blog/xv6]]
 
 **** inline assembly 
 
@@ -725,6 +722,11 @@ Turn in: Your explanations of the modifications for halt.
 **** Racing condition
 介绍了由竞争条件而引起的错误，从而引入了锁的
 *** 6. File system
+**** the file system contians  C files
+- bio.c
+- fs.h
+- 
+  
 **** challenges
 1. 文件系统需要在disk上的数据结构来表示已经命名的目录和文件，来保存 包含每个文件内容的身份，保存disk上的哪一块是空闲的。
 2. 文件系统必须支持 *crash recovery*，
