@@ -1,0 +1,285 @@
+* 考试复习指南
+** 最基本的是关于方法以及函数的定义
+*** 关于函数的定义
+#+BEGIN_SRC proof
+Proof.
+  intros n.
+  reflexivity.
+Qed.
+#+END_SRC
+
+#+BEGIN_SRC proof
+
+// 定义类型
+Inductive day: Type := 
+  | monday : day
+  | tuesday : day
+  | wednesday : day.
+
+// 定义函数
+Definition next_weekday(d:day ) : day := 
+  match d with
+  | monday => tuesday
+  | tuesday => wednesday
+end.
+
+// 计算
+Eval compute in (next_weekday tuesday).
+
+// 证明 
+Example test_next_weekeday:  # 这个地方要是首先定义一个 Example 后边跟着的是名字。
+  (next_weekday (next_weekday saturday) ) = tuesday. 
+Proof.
+  simpl.
+  reflexivity.
+Qed.
+
+// 定义递归函数
+Fixpoint evenb (n:bat) : bool :=
+  match n with
+  | O => true
+  | S n' => false
+  | S( S n') => even n'     (*定义的递归的操作*)
+end.
+
+// 定义操作的别名
+Notation "x + y" := (plus x y)  
+                       (at level 50, left associativity) 
+                       : nat_scope.
+
+#+END_SRC
+
+
+Theorem 定理的证明使用这个做为前驱
+
+Definition 和 Fixpoint 是定义函数
+
+Notation :表示法
+
+destruct n as [| n']
+Case "n = 0 "
+  reflexvity
+Case "n = S n' "
+  simpl.
+
+
+  induction n as [| n']
+*** 关于List的操作。
+#+BEGIN_SRC proof
+Inductive natlist : Type :=
+  | nil : natlist
+  | cons : nat -> natlist -> natlist.
+
+Fixpoint nonzeros (l : natlist )  natlist :=
+  match l with
+    | nil => nil
+    | h::t => match h with 
+               | nil => nonzeros(t)
+               | S n' => S n' :: nonzeros(t)
+              end
+end.
+#+END_SRC
+** 函数证明
+
+** lamda表达式
+
+** 多态
+*** 高阶函数的定义
+#+BEGIN_SRC proof
+// 多态表的建立 
+Inductive list (X : Type): Type :=
+  | nil => list
+  | cons => X -> list X -> list X.
+
+// 多态函数的编写 
+Fixpoint length (X: Type) (l: list X ) : nat :=
+  match l with
+    | nil => 0
+    | cons h t => S (length X t)
+end.
+// 这个地方是常常考察的内容
+Check length.
+forall X : Type, list x -> nat
+
+#+END_SRCXX
+*** 类型参数综合
+其实就是为了省略每次都要写"Type"，使用别的语法进行替代。
+#+BEGIN_SRC proof
+Definition list123 := 
+  cons _ 1 (con _ 2 (cons _ 3 (nil _) )).
+
+// 上面的例子就代表了下面的例子。
+Definition list123 := 
+  cons nat 1 (con nat 2 (cons nat 3 (nil nat) )).
+#+END_SRC
+其实说白了 就是使用 "_"代替 'Type'
+
+*** Implicit Arguments
+我们可以更进一步 省略掉 "_",
+** 高阶函数
+*** 高阶函数的特征
+- 可以作为参数传递给其他程序。
+- 可以作为返回值
+- 可以储存在数据结构中
+*** 高阶函数的类型的定义
+#+BEGIN_SRC proof
+Definition doit3times {X:Type} (f:X->X) (n:X) : X :=
+  f (f (f n)).
+
+// 高阶函数的类型 这个是常考的内容
+// Check 的类型
+Check @doit3times.
+doit3times : forall X : Type, (X -> X) -> X -> X 
+#+END_SRC
+*** Digression : Currying
+
+#+BEGIN_SRC proof
+Definition prod_curry {X Y Z : Type}
+  (f : X * Y -> Z) (x : X) (y : Y) : Z := f (x, y).
+
+Definition prod_uncurry {X Y Z : Type}
+  (f : X -> Y -> Z) (p : X * Y) : Z :=
+  (* FILL IN HERE *) 
+  match p with
+    | (x,y)=> f x y
+end.
+
+Check @prod_curry.
+prod_curry
+     : forall X Y Z : Type, (X * Y -> Z) -> X -> Y -> Z
+
+Check @prod_uncurry.
+
+prod_uncurry
+     : forall X Y Z : Type, (X -> Y -> Z) -> X * Y -> Z
+
+// 遇到不会的问题了？下面这两个问题都没有搞懂？
+
+uncurry_curry
+
+curry_uncurry
+#+END_SRC
+
+*** filter 过滤器
+
+#+BEGIN_SRC proof
+// 这个过滤器 只能针对 list上的进行过滤，如果是其他的数据结构，我们可能
+// 还需要其他的过滤器
+Fixpoint filter {X:Type} (test: X->bool) (l:list X)
+                : (list X) :=
+  match l with
+  | []     => []
+  | h :: t => if test h then h :: (filter test t)
+                        else       filter test t
+  end.
+// 这个就是非常典型的过滤器的使用。
+Example test_filter1: filter evenb [1;2;3;4] = [2;4].
+Proof. reflexivity.  Qed.
+#+END_SRC
+
+
+
+*** Anonymous Functions （无名函数）
+
+
+*** Map（映射）
+#+BEGIN_SRC proo
+Fixpoint map {X Y:Type} (f:X->Y) (l:list X)
+             : (list Y) :=
+  match l with
+  | []     => []
+  | h :: t => (f h) :: (map f t)
+  end.
+#+END_SRC
+
+*** Fold (*this section is very improtant*)
+#+BEGIN_SRC proof
+Fixpoint fold {X Y:Type} (f: X->Y->Y) (l:list X) (b:Y)     : Y :=
+  match l with
+  | nil => b
+  | h :: t => f h (fold f t b)
+  end.
+
+// 分析下面的例子，非常有帮助
+// 可以根据 fold的函数定义非常容易的得到
+Eval compute in fold mult [1;2;3;4] 0.
+0 = 1 × 2 × 3 × 4 × 0
+#+END_SRC
+*** functions for constructing functions(用来构造函数的函数)
+以前我们都是看的是 function 作为参数，现在来看看function作为返回值。
+
+#+BEGIN_SRC proof
+Definition constfun {X: Type} (x: X) :  nat->X  :=
+  fun (k:nat) => x.
+
+
+// 这个地方是怎么计算得到的？？？
+Example constfun_example2 : (constfun 5) 99 = 5.
+#+END_SRC
+
+#+BEGIN_SRC proof
+Definition override {X: Type} (f: nat->X) (k:nat) (x:X) : nat->X:=
+  fun (k':nat) => if beq_nat k k' then x else f k'.
+
+???
+#+END_SRC
+
+*** unfold
+证明的时候可能会卡主，因为Coq 不能自动的展开函数。
+#+BEGIN_SRC proof
+Theorem unfold_example_bad : forall m n,
+  3 + n = m ->
+  plus3 n + 1 = m + 1.
+Proof.
+  intros m n H.
+  Abort. // 这个地方是不能证明下去的，因为coq不能自动的展开plus3
+
+// 下面的这个证明是非常正确的。
+Theorem unfold_example : forall m n,
+  3 + n = m ->
+  plus3 n + 1 = m + 1.
+Proof.
+  intros m n H.
+  unfold plus3.  // 这个地方比较重要。
+  rewrite -> H.
+  reflexivity. Qed.
+#+END_SRC
+
+** Proposition and Evidence 命题与证明 Prop.v
+主要介绍coq中的逻辑命题的部分
+*** Induction (归纳法)
+
+ #+BEGIN_SRC proof
+ Theorem eight_is_beautiful: beautiful 8.
+Proof.
+   (* First we use the rule [b_sum], telling Coq how to
+      instantiate [n] and [m]. *)
+   apply b_sum with (n:=3) (m:=5). // 这个地方是最重要的。
+   (* To solve the subgoals generated by [b_sum], we must provide
+      evidence of [beautiful 3] and [beautiful 5]. Fortunately we
+      have rules for both. *)
+   apply b_3.
+   apply b_5.
+Qed.
+ #+END_SRC
+两种定义beautiful的方法，
+#+BEGIN_SRC proof
+// 方法一
+Inductive beautiful : nat -> Prop :=
+   b_0 : beautiful 0 
+ | b_3 : beautiful 3
+ | b_5 : beautiful 5
+ | b_sum : forall n m, beautiful n -> beautiful m -> beautiful (n + m).
+
+// 第二种定义的方法
+Inductive gorgeous : nat -> Prop :=
+  g_0 : gorgeous 0
+| g_plus3 : forall n, gorgeous n -> gorgeous (3 + n)
+| g_plus5 : forall n, gorgeous n -> gorgeous (5 + n). 
+#+END_SRC
+上面定义的gergous 和 beautiful 是等价的。所以我们使用两种不同的方式，进行定义。
+*** From boolean functions to proposition
+
+*** Inversion （逆置）？？？ 这个命令是用来做什么的？
+** my question 
+*** the different of "=>"and "->"
