@@ -88,7 +88,7 @@ persist.sys.dalvik.vm.lib 的值为libdvm.so 或者 为libart.so
 Zygote虚拟机的创建过程
 
 Zygote 从AndroidRuntime::start开始（@frameworks/base/core/jni/AndroidRuntime.cpp）
-#+BEGIN_SRC
+#+BEGIN_SRC C
 void AndroidRuntime::start(const char* className, const char* options)  
 {  
     ......  
@@ -142,7 +142,7 @@ AndroidRutime类的成员函数start最主要是做了以下三件事情
 
 接下来我们看JniInvocation的源码（@libnativehelper/JniInvocation.cpp）
 
-#+BEGIN_SRC
+#+BEGIN_SRC C
 #ifdef HAVE_ANDROID_OS  
 static const char* kLibrarySystemProperty = "persist.sys.dalvik.vm.lib";   // 系统属性，用来选择使用ART还是Dalvik
 #endif  
@@ -197,7 +197,7 @@ bool JniInvocation::Init(const char* library) {
 #+END_SRC
 
 下面我们来看AndroidRuntime类成员函数startVm的实现
-#+BEGIN_SRC
+#+BEGIN_SRC C
 int AndroidRuntime::startVm(JavaVM** pJavaVM, JNIEnv** pEnv)  
 {  
     ......  
@@ -218,7 +218,7 @@ int AndroidRuntime::startVm(JavaVM** pJavaVM, JNIEnv** pEnv)
 }  
 #+END_SRC
 从上面的代码我们可以看出startVm调用了JNI_CreateJavaVM，接下来我们看这个函数（@libnativehelper/JniInvocation.cpp）
-#+BEGIN_SRC
+#+BEGIN_SRC C
 extern "C" jint JNI_CreateJavaVM(JavaVM** p_vm, JNIEnv** p_env, void* vm_args) {  
   return JniInvocation::GetJniInvocation().JNI_CreateJavaVM(p_vm, p_env, vm_args);  
 }  
@@ -237,7 +237,7 @@ jint JniInvocation::JNI_CreateJavaVM(JavaVM** p_vm, JNIEnv** p_env, void* vm_arg
 简单来说Android应用程序的安装过程就是Android系统通过PackageManagerService来安装APK，
 在安装的过程，PackageManagerService会通过另外一个类Instalerl的成员函数dexopt来对APK里面的dex字节码进行优化：
 dexopt的代码如下（@frameworks/base/services/java/com/android/server/pm/Installer.java）
-#+BEGIN_SRC
+#+BEGIN_SRC C
 public final class Installer {  
     ......  
   
@@ -253,8 +253,8 @@ public final class Installer {
 #+END_SRC
 Installer通过socket向守护进程installd发送一个dexopt请求，这个请求是由installd里面的函数dexopt来处理的：
 (@frameworks/native/cmds/installd/commands.c)
-#+BEGIN_SRC
-int dexopt(const char *apk_path, uid_t uid, int is_public)  
+#+BEGIN_SRC C
+int dexopt(const char *apk_path, uid_t uid, int Gis_public)  
 {  
     struct utimbuf ut;  
     struct stat apk_stat, dex_stat;  
@@ -313,7 +313,7 @@ int dexopt(const char *apk_path, uid_t uid, int is_public)
 化成oart文件，实际上就是将dex字节码翻译成本地机器码，并且保存在一个oat文件中。
 
 函数run_dexopt和run_dex2oat的实现如下所示（@frameworks/native/cmds/installd/commands.c）：
-#+BEGIN_SRC
+#+BEGIN_SRC C
 static void run_dexopt(int zip_fd, int odex_fd, const char* input_file_name,  
     const char* output_file_name, const char* dexopt_flags)  
 {  
@@ -396,3 +396,5 @@ static void run_dex2oat(int zip_fd, int oat_fd, const char* input_file_name,
 
 
 ** OAT文件格式的分析
+
+*** OAT文件格式简介 

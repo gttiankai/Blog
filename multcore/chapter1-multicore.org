@@ -1,9 +1,12 @@
-
+多核并行计算
 * 多核计算比较重要的问题是
 ** 互斥问题
+
 ** 死锁问题
-** 饥饿问价
+
+** 饥饿问题
 当Alice和Bob的请求发生冲突的时候，总会是Bob的请求延迟，Bob的请求可能一致得不到满足。
+
 ** 等待
 * lock
 ** abortable locks 可撤销的锁
@@ -90,4 +93,136 @@ class LockOne implements Lock{
 结合了lockOne 和 LockTwo lock的优点,Peterson Lock是无饥饿，并且是死锁的。
 *note* :上面的锁都只能支持两个进程间的同步。
 *** 过滤锁
+
+* 考试
+** 题型
+- 选择题（15题 30分）
+- 简答证明题 （7 题 50分）
+- 编程题目 （fork-join framework, 使用锁和条件对象实现具体的共享访问协议）
+** 复习大纲
+*** 介绍并行和并发
+**** Java Multi-thread programming
+- start()
+每个线程都需要调用这个线程来开启线程
+- join() 
+**** 并行和并发的不同点
+- 不同
+
+并行（parallelism）：使用额外的资源使问题解决的更快。
+并发（concurrency）：正确并且高效的管理访问共享资源
+
+- 相同
+1. 都被用户线程所使用
+2. 如果并行的资源需要访问共享资源,那么并发就会被管理起来
+
+**** Calculate the amount of Primer Number in section [1, 10^7]  
+
+*** 并行编程
+算法和分析
+**** Sum array 
+- start 这个地方一定要注意，一定要注意启动每个子进程都需要，将使用start
+- join 
+- fork-join framwork Dag
+下面就是非常出名的 fork-join framwork (***)
+#+BEGIN_SRC java
+class SumThread extends java.lang.Thread{
+    int lo,hi;
+    int[] arr;
+    int ans = 0;
+    SumThread(int[] a, int l, int h){
+    }
+
+    public void run(){  // override
+    }
+
+    int sum (int[] arr){
+        int len = arr.length;
+        int ans = 0;
+        SumThread[] ts = new SumThread[4];
+        for (int i = 0; i < 4; i++) {
+            ts[i] = new SumThread(arr , i*len/4,(i+1)*len/4);
+            ts[i].start();
+        }
+        for (int j = 0; j < 4; j++) {
+            ts[j].join(); //   *join* 
+            ans += ts[i].ans;
+        }
+        return ans;
+    }
+}
+#+END_SRC
+- Divid and Conquer 分治法
+使用分治法来对上面的问题进行改进。
+**** 算法
+- Prefix-sum 
+- Filter
+- Parallel Sorting
+
+**** Work span and Parallelism
+
+
+**** Divid and Conquer 解决某些实际问题的编程
+*** 并发编程
+**** 互斥线程访问共享资源
+正确性和有效性
+
+
+**** 如何来描述并发进程的正确性
+- 互斥访问
+- 可线性化
+- 无死锁
+- 无饿死
+- lock-free？
+- 无等待
+**** 互斥(Mutual Exelusion)
+***** 互斥的形式化定义
+
+***** 证明可以互斥
+
+***** 拥有读写指令的强制互斥的约束
+
+***** CAS 和 GetAndSet
+**** 可线性化
+***** 我们为什么需要可线性化
+
+***** 什么是可线性化
+
+***** 怎么决定一个可线性化的执行历史
+
+***** 什么是顺序一致性
+
+***** SC 和 Lin的区别和不同
+
+***** 什么是线性化点
+**** Spin lock
+***** 理想化的锁的实现是低效的
+
+***** 什么是自旋（spin）
+
+***** 自旋锁的实现依赖于底层的结构
+
+***** 本地自旋对cache hit 是非常有帮助的
+
+***** TAS，TTAS, TTAS-backoff，CLH,MCS
+**** Monitors
+***** spin wait and blocking
+
+***** condition
+- await(),signal, signalAll()
+
+***** Re-check is necessary after being waken
+- while(B){x.await()}
+
+***** To avoid lost-wake-up
+
+***** 监听器的编程
+**** 并发数据结构
+***** 链表
+- Coarse-grained  Synchronization（粗粒度的同步）
+- Fine-grained Synchronization （细粒度的同步）
+- 乐观（optimistic）
+- Lazy
+- Lock-free
+**** Hand-over-hand locking
+**** 事物型内存？
 

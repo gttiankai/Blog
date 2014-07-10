@@ -178,9 +178,7 @@ Proof. reflexivity.  Qed.
 #+END_SRC
 
 
-
 *** Anonymous Functions （无名函数）
-
 
 *** Map（映射）
 #+BEGIN_SRC proo
@@ -281,5 +279,29 @@ Inductive gorgeous : nat -> Prop :=
 *** From boolean functions to proposition
 
 *** Inversion （逆置）？？？ 这个命令是用来做什么的？
+
+** Logic 
+Coq 内建的logic非常的简单，只提供了Inductive definitions, universal quantification (∀), and implication (→)，其余的 conjunction,disjunction,negation,existential quantification,even equality,都可以通过上面的进行编码。
+
+*** Conjunction (连接词)
+我们在这里看一个连接词的表示 “ and ”。
+#+BEGIN_SRC proof
+Inductive and (P Q : Prop ) : Prop :=
+  conj : p -> Q -> (and P Q ).
+
+Notation "P ∧ Q"  :=  (and P Q) : type_scope.
+
+Check conj.
+forall P Q : Prop, P -> Q -> P ∧ Q
+#+END_SRC
+
+当使用split，这个命令代替了 “apply conj”，
+*** iff (当且仅当)
+inversion：当结果成立的时候，条件必须成立，也就是结果成立，推导出必要条件。
+
+
 ** my question 
-*** the different of "=>"and "->"
+*** the differences of "=>"and "->"
+*** destruct 和 induction的不同
+destruct 是分情况讨论，这个地方destruct可以讨论的情况可以大于两种。
+induction 是数学归纳法，所以千万不要把这两个命令混淆。
