@@ -125,29 +125,32 @@ class LockOne implements Lock{
 - fork-join framwork Dag
 下面就是非常出名的 fork-join framwork (***)
 #+BEGIN_SRC java
-class SumThread extends java.lang.Thread{
-    int lo,hi;
+class SumArray extends RecursiveTask<Integer>{
+    int lo;
+    int hi;
     int[] arr;
-    int ans = 0;
-    SumThread(int[] a, int l, int h){
-    }
-
-    public void run(){  // override
-    }
-
-    int sum (int[] arr){
-        int len = arr.length;
-        int ans = 0;
-        SumThread[] ts = new SumThread[4];
-        for (int i = 0; i < 4; i++) {
-            ts[i] = new SumThread(arr , i*len/4,(i+1)*len/4);
-            ts[i].start();
+    SumArray(int a , int l, int h)
+        {} // construct
+    protected Integer computer(){
+        if(hi - lo < SEQUENTIAL_CUTOFF){
+            int ans;
+            for (int i = lo; i < hi; i++) {
+                ans += arr[i]
+            }
+            return ans;
+        }else{
+            SumArray left = new SumArray(arr, lo, (hi + lo)/2);
+            SumArray right = new SumArray(arr,(hi+lo)/2, hi );
+            left.fork;
+            int rightAns = right.computer();
+            int leftAns = left.join();
+            return leftAns + rightAns;
         }
-        for (int j = 0; j < 4; j++) {
-            ts[j].join(); //   *join* 
-            ans += ts[i].ans;
-        }
-        return ans;
+    }
+    static final ForkJoinPool fjPool = new ForkJoinPool();
+
+    int sum(int[] arr){
+        return fjPool.invoke(new SumArray(arr,0,arr.length));
     }
 }
 #+END_SRC
