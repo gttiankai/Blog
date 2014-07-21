@@ -98,7 +98,7 @@ class LockOne implements Lock{
 ** 题型
 - 选择题（15题 30分）
 - 简答证明题 （7 题 50分）
-- 编程题目 （fork-join framework, 使用锁和条件对象实现具体的共享访问协议）
+- 编程题目 （fork-join framework, 使用锁和条件对象实现具体的共享访问协议，7或者8）
 ** 复习大纲
 *** 介绍并行和并发
 **** Java Multi-thread programming
@@ -186,6 +186,19 @@ class SumArray extends RecursiveTask<Integer>{
 
 ***** CAS 和 GetAndSet
 **** 可线性化
+
+***** 静态一致性，顺序一致性和可线性化特征区别（自己添加的，不是考试内容）
+- 静态一致性：适用于以*相对较弱*的对象行为约束代价获得高性能的应用，
+- 顺序一致性：是一种较强的约束限制，通常用于表述类似于硬件存储器接口这样的的底层系统。
+- 可线性化特征：是一种更强的约束，适用于描述由可线性化组件构成的高层系统。
+
+***** 一些符号的意义
+
+q.enq(x): 表示线程使元素在对象q中入队。q.deq(x)表示线程使x从对象q中出队。
+
+***** 静态一致性
+原则：3.3.1 方法调用应呈现出以某种顺序次序执行且每个时刻只有一个调用发生
+原则：3.3.2 由一系列静止状态分隔开的方法调用应呈现出与按照他们的实时调用次序相同的执行的效果。
 ***** 我们为什么需要可线性化
 
 ***** 什么是可线性化
@@ -193,7 +206,9 @@ class SumArray extends RecursiveTask<Integer>{
 ***** 怎么决定一个可线性化的执行历史
 
 ***** 什么是顺序一致性
+原则3.4.1：方法调用应该呈现出按照程序次序调用的执行效果。
 
+顺序一致性：要求方法调用的执行行为具有按照某种顺序次序的执行效果，并且这种顺序
 ***** SC 和 Lin的区别和不同
 
 ***** 什么是线性化点
@@ -207,6 +222,11 @@ class SumArray extends RecursiveTask<Integer>{
 ***** 本地自旋对cache hit 是非常有帮助的
 
 ***** TAS，TTAS, TTAS-backoff，CLH,MCS
+1.CLH 队列锁的实现 ，
+ CLH队列中的结点QNode中含有一个locked字段，该字段若为true表示该线程需要获取锁，且不释放锁，为false表示线程释放了锁。结点之间是通过隐形的链表相连，之所以叫隐形的链表是因为这些结点之间没有明显的next指针，而是通过myPred所指向的结点的变化情况来影响myNode的行为。CLHLock上还有一个尾指针，始终指向队列的最后一个结点。CLHLock的类图如下所示：
+具体的情况可以点击下面的连接 [[http://blog.csdn.net/aesop_wubo/article/details/7533186][here]]
+2. MCS 锁的实现
+[[http://blog.csdn.net/aesop_wubo/article/details/7538934][java 并发编程学习笔记之MCS队列锁]]
 **** Monitors
 ***** spin wait and blocking
 
@@ -229,3 +249,31 @@ class SumArray extends RecursiveTask<Integer>{
 **** Hand-over-hand locking
 **** 事物型内存？
 
+** my question
+*** 活性和安全性
+- 安全性：说明了“不好的事情”绝不会发生。
+- 活性：指的是特定的“好的事情”一定会发生。
+
+*** 无饥饿和无死锁的定义
+
+*** 几种锁的实现 MCS 和 CLH 
+
+*** t.void ：就是使动作生效。
+
+*** ABA 问题
+compareAndSet(old-value, new-value)操作,判断 old-value是否有效，如果有效进行替换。
+*** 粗粒度锁和细粒度锁
+
+*** ABA 问题 linked-list 或者tm ppt
+
+*** 加速比的公式
+
+*** volatile(挥发)
+volatile域是可线性的，对一个volatile域的读就如同获得一个锁：工作区被置为无效，重新从存储器中读取该挥发域的当前值。对一个volatile域的写类似于释放一个锁：挥发域的值立即被写回到寄存器。
+
+*** compareAndSet
+意思是指在set之前先比较该值有没有变化，只有在没变的情况下才对其赋值
+
+*** 乐观锁与悲观锁
+- 悲观锁：假定会发生并发冲突。所以要尽可能的锁住。
+- 乐观锁：假定不会发生并发冲突，只会在真正提交的时候，才会加锁，
