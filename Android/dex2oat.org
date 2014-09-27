@@ -1,0 +1,7 @@
+* options参数的的构造
+
+#+BEGIN_SRC cpp
+Runtime::Options options;
+options.
+
+#+END_SRC
