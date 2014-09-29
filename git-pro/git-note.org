@@ -6,3 +6,32 @@
 将 2bcced7 所在的分支 新建为 tmp分支
 
 *** git branch -D lab2 
+** 关于ssh-key操作的提示
+今天在一天公司的新电脑上使用git-clone git@github.com:gttiankai/Blog.git,当时提示没有权限
+#+BEGIN_SRC 
+Cloning into 'Blog'...
+Warning: Permanently added the RSA host key for IP address '192.30.252.129' to the list of known hosts.
+Permission denied (publickey).
+fatal: The remote end hung up unexpectedly
+#+END_SRC
+
+使用
+#+BEGIN_SRC shell
+git config --global user.name "Your Name Here"
+Sets the default name for git to use when you commit
+git config --global user.email "your_email@example.com"
+Sets the default email for git to use when you commit
+#+END_SRC
+还是不行,所以我只好,就我自己的电脑的RSA-key添加到git上,具体的做法如下所示:
+#+BEGIN_SRC shell
+cd ~/.ssh
+ls
+#+END_SRC
+看看有没有生成rsa-key,如果有将公钥添加到git-hub上的权限管理里面.如果没有的话:
+#+BEGIN_SRC 
+ssh-keygen
+#+END_SRC
+生成公钥.
+
+然后就可以直接clone
+原因分析: 应该是我在创建blog仓库的时候,没有将权限设置好.
