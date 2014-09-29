@@ -35,3 +35,8 @@ ssh-keygen
 
 然后就可以直接clone
 原因分析: 应该是我在创建blog仓库的时候,没有将权限设置好.
+** 关于git plog命令的处理
+使用plog命令看git仓库的log信息,使用徐迪的配置,他的.gitconfig网址为
+https://github.com/xudifsd/dotfile/
+blob/master/.gitconfig.
+直接copy他的gitconfi到~/.gitconfig文件中就可以了!
