@@ -65,7 +65,7 @@ libart.so 提供了一套完全兼容Java虚拟机的接口
 
 
 #+CAPTION: 
-[[/home/tiankai/git-hub/Blog/Android/20140111165827656.jpg]]
+[[file:20140111165827656.jpg]]
 
 从上图我们可以知道，dalvik虚拟机和ART虚拟机都实现了三个抽象Java虚拟机的接口
  1. JNI_GetDefaultJavaVMInitArgs -- 获取虚拟机的默认初始化参数
