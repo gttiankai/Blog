@@ -242,7 +242,10 @@ https://github.com/gttiankai/Blog/blob/master/Android/picture1.png
    4. 监督和检查：定期对风险与控制进行监督和检查。
    5. 沟通和记录：成功的风险评估依赖于与利益相关方的有效沟通和协商。
 
+#+CAPTION:
 file:picture2.png
+
+
 
 https://github.com/gttiankai/Blog/blob/master/Android/picture2.png
 
