@@ -180,7 +180,7 @@
    - 风险评估文档记录
 具体如下图所示: 
 
-#+CAPTION 
+#+CAPTION: 
 [[file:picture1.png][picture1]]
 
 4. 了解风险评估的报告格式与形成报告的方法 
