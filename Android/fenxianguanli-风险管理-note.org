@@ -182,6 +182,8 @@
 
 file:picture1.png
 
+https://github.com/gttiankai/Blog/blob/master/Android/picture1.png
+
 
   
 4. 了解风险评估的报告格式与形成报告的方法 
