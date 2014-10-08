@@ -180,7 +180,8 @@
    - 风险评估文档记录
 具体如下图所示: 
 
-file:///home/tiankai/git-hub/Blog/Android/picture1.png
+[[file:///home/tiankai/git-hub/Blog/Android/picture1.png][风险评估实验过程图]]
+
 
   
 4. 了解风险评估的报告格式与形成报告的方法 
@@ -238,7 +239,6 @@ file:///home/tiankai/git-hub/Blog/Android/picture1.png
    3. 风险应对：选择并执行一种或多种改变风险的措施，包括改变风险事件发生的可能性和后果。递进的循环过程。
    4. 监督和检查：定期对风险与控制进行监督和检查。
    5. 沟通和记录：成功的风险评估依赖于与利益相关方的有效沟通和协商。
-file:picture2.png
 
 ***** 5.风险管理实例*
 1. 了解主要行业的典型安全风险特性.
