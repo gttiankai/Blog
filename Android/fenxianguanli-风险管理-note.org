@@ -126,6 +126,7 @@
    - 技术手段、方法、工具等
 
 2. 理解GB/T 20984
+ 由权贵补全
 
 3. 了解各行业的信息安全风险管理指引
 
@@ -182,9 +183,12 @@
 
 
 #+CAPTION: 
+file:1.jpg
+
+
+
+
 https://github.com/gttiankai/Blog/blob/master/Android/1.png
-
-
 
 
 4. 了解风险评估的报告格式与形成报告的方法 
@@ -248,7 +252,9 @@ https://github.com/gttiankai/Blog/blob/master/Android/picture2.png
 ***** 5.风险管理实例*
 1. 了解主要行业的典型安全风险特性.
 
+
 2. 了解1-2个行业的典型风险管理实例.
+
 在<<信息安全风险评估教程>>这本书的page114,有信息安全 *风险评估* 案例,题目要求的是 *风险管理* 案例,风险管理的案例暂时没有找到,后续会再找一下,若实在找不到就先使用这个.
 
 
@@ -269,3 +275,5 @@ https://github.com/gttiankai/Blog/blob/master/Android/picture2.png
 ***** 3.安全通信协议*
 1. 了解典型的安全通信协议.
 2. 了解典型的安全通信协议在通信过程中的应用.
+
+* 典型例题
