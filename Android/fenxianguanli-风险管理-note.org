@@ -179,7 +179,7 @@
    - 风险分析
    - 风险评估文档记录
 具体如下图所示: 
-
+#+CAPTION:
 file:picture1.png
 
 https://github.com/gttiankai/Blog/blob/master/Android/picture1.png
