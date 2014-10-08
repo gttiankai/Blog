@@ -179,6 +179,7 @@
    - 风险分析
    - 风险评估文档记录
 具体如下图所示: 
+
 file:///home/tiankai/git-hub/Blog/Android/picture1.png
 
   
