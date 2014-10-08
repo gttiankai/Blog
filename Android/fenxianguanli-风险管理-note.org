@@ -182,7 +182,7 @@
 
 
 #+CAPTION: 
-https://github.com/gttiankai/Blog/blob/master/Android/1.png
+file:1.png
 
 
 
