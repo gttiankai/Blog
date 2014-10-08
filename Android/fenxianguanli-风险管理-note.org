@@ -144,7 +144,10 @@
    2.2 风险评估框架及流程
      - 风险要素关系(方框代表为风险评估的基本要素,椭圆为与这些要素相关的属性)
 file:2.png
+https://github.com/gttiankai/Blog/blob/master/Android/2.png
 file:3.png
+https://github.com/gttiankai/Blog/blob/master/Android/3.png
+
 
 
      - 风险分析原理（涉及资产、威胁、脆弱性三个基本要素）
@@ -156,11 +159,13 @@ file:3.png
            5. 根据脆弱性的严重程度及安全事件所作用的资产的价值计算安全事件造成的损失
            6. 根据安全事件发生的可能性以及安全事件出现后的损失，计算安全事件一旦发生对组织的影响，即风险值
 file:4.png
+https://github.com/gttiankai/Blog/blob/master/Android/4.png
 
 
       - 实施流程
 
 file:5.png
+https://github.com/gttiankai/Blog/blob/master/Android/5.png
  
    2.3 风险评估实施
       1. 风险评估准备
