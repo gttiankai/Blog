@@ -244,6 +244,8 @@ https://github.com/gttiankai/Blog/blob/master/Android/picture1.png
 
 file:picture2.png
 
+https://github.com/gttiankai/Blog/blob/master/Android/picture2.png
+
 
 ***** 5.风险管理实例*
 1. 了解主要行业的典型安全风险特性.
