@@ -52,14 +52,14 @@ ART： Android Run Time。使用AOT（Ahead of time）机制，在程序的安�
 - runtime： Android ART运行时的源代码 编译为libart.so
 
 同Dalvik机制的对比
-- dexopt ： dex -->odex
-- runtime: libdvm.so 解释执行dex文件
-
+  - dexopt ： dex -->odex
+  - runtime: libdvm.so 解释执行dex文件
+  
 *Question:* libart.so libdvm.so的区别?
 
-libdvm.so 解释执行dex文件
-libart.so 提供了一套完全兼容Java虚拟机的接口
-
+ libdvm.so 解释执行dex文件
+ libart.so 提供了一套完全兼容Java虚拟机的接口
+  
 我们知道android程序试运行在dalvik虚拟机上面，android ART要想取代dalvik虚拟机，最好的方式也是实现一个“ART虚拟机”的方式
 这里说的“ART虚拟机”是指的实现的形式，ART虚拟机（libart.so）其实就是实现了一套完全兼容Java虚拟机的接口
 
@@ -68,19 +68,19 @@ libart.so 提供了一套完全兼容Java虚拟机的接口
 [[file:20140111165827656.jpg]]
 
 从上图我们可以知道，dalvik虚拟机和ART虚拟机都实现了三个抽象Java虚拟机的接口
- 1. JNI_GetDefaultJavaVMInitArgs -- 获取虚拟机的默认初始化参数
-
- 2. JNI_CreateJavaVM             -- 在进程中创建虚拟机实例
-
- 3. JNI_GetCreatedJavaVMs        -- 获取进程中创建的虚拟机实例
-在android系统中，Dalvik虚拟机是现在libdvm.so,ART虚拟机实现在libart.so中，也就是说这两个so文件
-都实现了JNI_GetDefaultJavaVMInitArgs、JNI_CreateJavaVM和JNI_GetCreatedJavaVMs这三个接口，供外界调用。
-
-上图中的系统属性：persist.sys.dalvik.vm.lib，表示系统是使用Dalvik虚拟机还是使用ART模式
-persist.sys.dalvik.vm.lib 的值为libdvm.so 或者 为libart.so
-
-为了实现ART虚拟机无缝的替换Dalvik虚拟机的我们将从下面两个方面进行分析
-
+      1. JNI_GetDefaultJavaVMInitArgs -- 获取虚拟机的默认初始化参数
+      
+      2. JNI_CreateJavaVM             -- 在进程中创建虚拟机实例
+      
+      3. JNI_GetCreatedJavaVMs        -- 获取进程中创建的虚拟机实例
+   android系统中，Dalvik虚拟机是现在libdvm.so,ART虚拟机实现在libart.so中，也就是说这两个so文件
+   实现了JNI_GetDefaultJavaVMInitArgs、JNI_CreateJavaVM和JNI_GetCreatedJavaVMs这三个接口，供外界调用。
+   
+   图中的系统属性：persist.sys.dalvik.vm.lib，表示系统是使用Dalvik虚拟机还是使用ART模式
+   ersist.sys.dalvik.vm.lib 的值为libdvm.so 或者 为libart.so
+   
+   了实现ART虚拟机无缝的替换Dalvik虚拟机的我们将从下面两个方面进行分析
+   
 *** 1. ART虚拟机的启动过程
 为了实现ART虚拟机无缝的替换Dalvik虚拟机，我们应该尽量的简单的，不修改太多的系统源代码的前提下进行替换
 
