@@ -1,4 +1,5 @@
 #include <iostream>
+
 class Helloworld
 {
 public:
@@ -6,7 +7,7 @@ public:
     virtual ~Helloworld();
     void printf(){
         std::cout<<"hello dlopen!"<<std::endl;
-    };
+    }
 };
 int main(int argc, char *argv[])
 {
