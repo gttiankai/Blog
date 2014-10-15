@@ -1,0 +1,10 @@
+dex文件加载过程分析
+* dex文件加载过程
+首先明确我们要达到的目的:其实我们要做的就是一个动态的加载dex文件的过程,这是加壳程序的一部分.其次明确我们是没有odex文件的,所以我们会生成odex文件.
+
+
+* DexFile_openDexFileNative
+static jint DexFile_openDexFileNative(JNIEnv* env, jclass, jstring javaSourceName, jstring javaOutputName, jint)
+
+参数:javaSourceName:dex文件的路径名称
+     javaOutputName:输出文件的路径
