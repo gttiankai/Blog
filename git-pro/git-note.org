@@ -1,12 +1,51 @@
-* git 操作笔记
-** 关于分支的操作
+git 操作笔记
+* git 初始化的操作
+** git的配置操作
+1. git config --system 命令读写的是/etc/gitconfig 文件, 是整个系统中对所有的用户都普遍试用的配置.
+2. git config --global 命令读写的是~/.gitconfig 文件, 适用于该用户的所有的仓库.
+3. 还有最后就是当前仓库下的配置文件 /repository-path/.git/config ,修改该文件就是可以修改该仓库的配置.
+*Note*:最重要的就是注意 每一级别的配置都会覆盖上一级别的配置.覆盖配置文件中同名的变量(3覆盖2, 2覆盖1).
+** 用户信息
+配置用户的信息,这两条非常的重要.
+$ git config --global user.name "username"
+$ git config --global user.email tiankai@example.com
+** 查看配置信息
+git config -list
+** *获得帮助*
+$ git help <verb>
+$ git <verb> --help
+$ man git-<verb>
+* git 的基本的操作
+** 忽略默写文件
+文件/repository-path/.gitignore记录要忽略的文件.
+- 所有空行或者以注释符号"#"开头的行都会被git忽略.
+- 可以使用标准的glob模式匹配.
+- 匹配模式最后跟反斜杠(/)说明要忽略的是目录.
+- 要忽略指定模式之外的文件或目录,可以在模式前加上惊叹号(!)取反.
+所谓的glob模式就是shell使用的简单正则表达式
+- * : 匹配零个或多个字符.
+- [abc]: 匹配a,b,c中的任意一个,但不能匹配多个
+- 问好(?) 只匹配任意一个字符.
+- [0-9] 使用短划线分割,表示匹配在这个范围内的字符
+** 撤销操作
+*** 修改最后一次提交
+git commit --amend
+*** 取消已经暂存的文件
+
+
+* 关于分支的操作
+*** 新建分支
+git branch branch-name(只新建,当时并不切换)
+*** 新建分支兵切换到该分支
+git checkout -b branch-name
+  
 *** git branch -d tmp
 删除 tmp 分支
 *** git checkout 2bcced7(hash code)  -b tmp
 将 2bcced7 所在的分支 新建为 tmp分支
 
 *** git branch -D lab2 
-** 关于ssh-key操作的提示
+* 关于ssh-key操作的提示
 今天在一天公司的新电脑上使用git-clone git@github.com:gttiankai/Blog.git,当时提示没有权限
 #+BEGIN_SRC 
 Cloning into 'Blog'...
@@ -35,7 +74,7 @@ ssh-keygen
 
 然后就可以直接clone
 原因分析: 应该是我在创建blog仓库的时候,没有将权限设置好.
-** 关于git plog命令的处理
+* 关于git plog命令的处理
 使用plog命令看git仓库的log信息,使用徐迪的配置,他的.gitconfig网址为
 https://github.com/xudifsd/dotfile/
 blob/master/.gitconfig.
