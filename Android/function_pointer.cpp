@@ -14,6 +14,45 @@
  *
  */
 #include <iostream>
+#include <string.h>
+#include <stdio.h>
+float add(float a, float b){return a + b;}
+float minus(float a, float b){ return a - b;}
+float multiply(float a, float b){ return a*b;}
+float divide(float a, float b){return a/b;}
 
-float add(float a, float b){return a + b };
-float minns(float a, float b   )
+float ( * functionMap(char op) )(float, float)
+{
+
+    switch (op) {
+        case '+':
+            return add;
+            break;
+        case '-':
+            return minus;
+            break;
+        case '*':
+            return multiply;
+            break;
+        case '/':
+            return divide;
+            break;
+    }
+}
+int main(int argc, char *argv[])
+{
+    float a = 10, b = 5;
+    char ops[] = {'+', '-', '*', '/'};
+    int len = strlen(ops);
+
+    // 定义函数指针
+    float (*returned_function_pointer)(float, float);
+    
+    for (int i = 0; i < len; ++i)
+    {
+        returned_function_pointer = functionMap(ops[i]);
+        printf("the result caculated by the operator %c is %f \n", ops[i],
+            returned_function_pointer(a, b));
+    }
+    return 0;
+}

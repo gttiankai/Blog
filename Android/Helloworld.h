@@ -2,9 +2,11 @@
 class Helloworld
 {
 public:
-     Helloworld();
-    ~Helloworld();
+    Helloworld(int A);
     void  helloprintf();
+    //Helloworld* returnThis();
+private:
+    int a;
 };
 //int main(int argc, char *argv[])
 //{                               

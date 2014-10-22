@@ -2,3 +2,8 @@
 *#
 *.html
 *archive
+*.so
+*.o
+*.a
+*.so.*
+*.out
