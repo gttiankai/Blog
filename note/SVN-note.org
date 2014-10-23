@@ -1,0 +1,42 @@
+SVN Note
+* svn 安装
+在ubuntu上:
+
+#+BEGIN_SRC 
+sudo apt-get install subversion
+#+END_SRC
+
+还有一个subversion的工具需要安装一下:
+
+#+BEGIN_SRC 
+sudo apt-get install subversion-tools
+#+END_SRC
+
+* svn初使用
+** 从远程仓库中copy一份文件(检出)
+使用svn做版本控制的第一步一般都是从远程仓库中复制一个副本,使用的命令是:
+
+#+BEGIN_SRC 
+svn checkout https//.... --username yourusername
+#+END_SRC
+
+这个命令和git中的命令很不一样,个人感觉还是git中的命令比较直白,该命令等同
+于git:中的命令:
+
+#+BEGIN_SRC 
+git clone url-to-reposity
+#+END_SRC
+** 将文件加入版本库
+#+BEGIN_SRC 
+svn add filename
+#+END_SRC
+** commit
+#+BEGIN_SRC 
+svn commit -m " some message"
+#+END_SRC
+** update
+#+BEGIN_SRC 
+svn update
+svn update -r 
+svn update file-name
+#+END_SRC
