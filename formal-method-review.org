@@ -303,5 +303,8 @@ inversion：当结果成立的时候，条件必须成立，也就是结果成�
 ** my question 
 *** the differences of "=>"and "->"
 *** destruct 和 induction的不同
-destruct 是分情况讨论，这个地方destruct可以讨论的情况可以大于两种。
+destruct 是分情况讨论，这个地方destruct可以讨论的情况可以大于两种
+
 induction 是数学归纳法，所以千万不要把这两个命令混淆。
+
+

@@ -45,6 +45,12 @@ git checkout -b branch-name
 将 2bcced7 所在的分支 新建为 tmp分支
 
 *** git branch -D lab2 
+
+* git 中的 rebase(衍合)
+我们一般使用使用git rebase命令来对我们的分支merger操作,
+#+BEGIN_SRC 
+git rebase [主分支] [特征分支]
+#+END_SRC
 * 关于ssh-key操作的提示
 今天在一天公司的新电脑上使用git-clone git@github.com:gttiankai/Blog.git,当时提示没有权限
 #+BEGIN_SRC 
@@ -76,6 +82,5 @@ ssh-keygen
 原因分析: 应该是我在创建blog仓库的时候,没有将权限设置好.
 * 关于git plog命令的处理
 使用plog命令看git仓库的log信息,使用徐迪的配置,他的.gitconfig网址为
-https://github.com/xudifsd/dotfile/
-blob/master/.gitconfig.
+https://github.com/xudifsd/dotfile/blob/master/.gitconfig
 直接copy他的gitconfi到~/.gitconfig文件中就可以了!
