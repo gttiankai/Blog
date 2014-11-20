@@ -7,3 +7,4 @@
 *.a
 *.so.*
 *.out
+*.class
