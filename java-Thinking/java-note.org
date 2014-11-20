@@ -311,8 +311,7 @@ Note: 子类和父类的signature必须相同
 
 ** 接口与抽象类的区别
 1. 可以定义的方法和属性是不同
-   - 抽象类可以在内部定义 not-static 和 not final的属性(也可以叫做域),可以定
-义public,protect and private方法.
+   - 抽象类可以在内部定义 not-static 和 not final的属性(也可以叫做域),可以定义public,protect and private方法.
    - 接口 只能定义 public static final的属性(域),只能定义public的方法.
 2. 与继承结合不同(这个是最重要的区别,也是体现接口的作用的地方)
    - 只能继承一个类,这个类可以是抽象类也可以是非抽象类,但必须是一个 
