@@ -1,0 +1,320 @@
+this is the note about the book << Thinking in Java>>
+* DONE <2014-09-12 Fri>
+CLOSED: [2014-09-19 Fri 14:42]
+- State "DONE"       from ""           [2014-09-19 Fri 14:42]
+** 吴桂兴 gxwu@ustc.edu.cn
+** help
+1. http://docs.oracle.com/javase/tutorial/
+2. Thinking in java (4)
+3. Java 核心编程 Gary Cornell and Cay S.Horstman
+4. 马尚斌的视频
+** java后续进阶
+1. Java web programming
+2. J2EE
+3. 轻量级J2EE
+
+** JDK and JRE
+1. JDK :java develper kit; 用来编写java程序,我的理解主要是一个编译器
+2. JRE :java runtime environment; 用来运行java程序的虚拟机
+** Java 编码风格
+1. 类名的首字母需要大写
+2. 多个单词组成类名,其中每个内部单词的首字母大写
+3. 定义枚举类型一般全部使用大写字母,如果有多个单词,多个单词之间使用下划线进行隔开.
+4. java规定包名使用全部的小写字母进行表示
+** Java 程序的编译与运行
+编译: javac 程序名称+ 后缀.java . example: javac Helloworld.java
+运行: java 程序名称 example: java Helloworld
+
+** 类的方法的使用
+使用类的非静态的方法必须首先创建该类的一个对象,然后通过对象才能调用
+
+** TODO Java 中的引用的理解
+
+** chapter 5 初始化与清理
+*** 默认构造器
+1. 如果自己没有在创建的类中提供一个构造器,Java编译器会为你自动创建一个默认的构造器,这个默认的构造器不做任何事情
+*** this 关键字
+1. 在方法的内部获得当前对象的引用,就可以使用this
+2. 需要返回对当前对象的引用
+3. 将当前对象传递给其他方法
+
+note:在方法的内部调用同一个类的另一个方法,直接使用就可以了,不需要this.
+*** super 关键字
+注意这个地方的super关键字指的是父类,如下代买所示:
+#+BEGIN_SRC java
+class Game{
+   Game(int i){ System.out.println(" Game constructor")};
+}
+
+class BoardGame exterds Game{
+  super(1);// 此处就非常的微妙,super代指就是父类,这样写的话,就意味着调用父类的构造方法
+}
+#+END_SRC
+*** static 关键字 
+1. static方法就是没有this的方法.
+2. 在static方法内部不能调用非静态的方法.
+3. 在没有创建任何对象的前提下,仅仅通过类本身来调用static方法.
+4. 当在类中置入static方法之后,就可以访问其他static方法和static域.
+
+*** Java中的垃圾回收
+1. 对象可能不被回收
+2. 垃圾回收并不等于析构
+3. 垃圾回收只与内存有关
+
+*** finalize()
+该函数与垃圾回收机制有很强的关系,当Java虚拟机进行垃圾回收之前,系统会首先调用类的finilize()方法,所以我们可以在finalize()方法中做一些工作,这个是看程序的需要进行操作的,不是强制的.
+
+*** 构造器初始化
+我们可以使用构造器进行初始化, 当时不能阻止自动初始化的进行,并且自动初始化的是在构造器调用之前.这是应该注意的.具体的操作可以查看
+file::/~/documents/java_Thinking/OrderOfInitialization.java
+
+*** 静态数据的初始化
+初始化的顺序
+1. 初始化的顺序是首先静态对象(如果他们并没有因为前面的对象创建过程而被初始化)
+2. 而后是"非静态"的对象
+对这个知识点的理解主要参考StaticInitialization.java这个方法,而且注意查看输出结果
+*** 可变参数的方法
+书写可变参数的方法主要由两种方式
+#+BEGIN_SRC java
+void printArray(Object[] args);// java SE5之前写法
+
+void printArray(Object...args);// 现在通用的写法
+#+END_SRC
+* DONE <2014-09-13 Sat>
+CLOSED: [2014-09-19 Fri 14:42]
+- State "DONE"       from ""           [2014-09-19 Fri 14:42]
+** Java EE, Java SE , Java ME(考试相关)
+java EE: 企业级别的
+java SE: standard (标准的java的)
+java ME: mobile (机顶盒,手机,嵌入式)
+** 类的定义(考试相关)
+类是用于描述同一类型的对象的一个抽象概念,类中定义了这一类对象所具有的静态和动态的属性
+** 存放位置
+** chapter6 访问权限控制
+*** 访问权限的等级
+public > protected > 包访问权限 > private
+** chapter7 代码复用
+*** 组合
+
+*** 继承
+
+当继承的时候,如果父类中的构造方法都是带参数的构造器,所以我们必须使用super关键字,带上参数化调用带参数的构造器.
+Note: 一个类只能继承一个父类,不能继承多个父类.(但是在cpp中可以进行多重继承的).
+*** 代理
+*** final关键字
+**** final数据
+1. 一个永不改变的编译时常量.
+2. 一个在运行时被初始化的值,而你不希望被改变.
+note: 使用final修饰的变量,必须是基本数据类型.
+**** 空白final
+所谓空白final是指被声明为final但又为给定初值的域.
+**** final 参数
+Java允许在参数列表中以申明的方式将参数指明为final,这意味着你无法在方法中更改参数引用所指向的对象.
+
+**** final方法
+1. 把方法锁住,以防止任何继承类修改他的含义
+2. 过去建议使用final是为了效率
+note: 类中所有的private方法隐式的指定为final方法
+*** 初始化及类的加载的顺序
+从resuing/Beetle.java中我们可以看到,在java程序中的类的初始化中的过程中初始化和加载的顺序是:
+1. 类中的静态成员变量
+2. 父类的初始化(如果存在的话)
+* DONE <2014-09-17 Wed>
+CLOSED: [2014-09-19 Fri 14:42]
+- State "DONE"       from ""           [2014-09-19 Fri 14:42]
+** 多态
+** 绑定
+1. static方法和final方法(private方法属于finale方法),是前期绑定的.
+2. 其他方法都是动态绑定的.也就是在运行时绑定.
+* DONE <2014-09-19 Fri>
+CLOSED: [2014-09-19 Fri 14:42]
+- State "DONE"       from ""           [2014-09-19 Fri 14:42]
+** 问题
+1. real_world contain  _states_ and _objects_
+2. A software object's  state is stored in _fields_ 
+3. 栈连续的空间,堆可以不连续
+4. A software objects's behavior is exposed  through _method_
+5. A blueprint for a software objects is called  a _interface_
+6. java中的各种类型在内存中的分布 
+heap  :对象 
++ 
+stack :local variable 
++ 
+data segment :static variable , 字符常量
++ 
+code segment :code 
+
+** TODO java 堆和栈的区别 
+查资料
+** TODO Java的命名规则
+1. 大小写敏感
+2. 使用字母,数字,下划线,美元符,但开头只能使用字符 
+** TODO shadow code in windows 
+上网查资料
+** android 安全加固技术
+1. 虚拟机保护, 定制自己指令集,将程序的关键部分虚拟化执行.
+问题: 
+* DONE <2014-09-20 Sat>
+CLOSED: [2014-11-02 Sun 22:34]
+- State "DONE"       from ""           [2014-11-02 Sun 22:34]
+** WAITING 10月10号,java考试, 1:30
+** 考试问题
+1. the term "instance variable" is another name for __ .
+2. the term "class variable" is another name for __.
+** java中变量的类型(是不是只有下面的两个)
+1. 全局变量
+2. 局部变量
+** 基本数据类型(注意与c++ 的不同)
+1. byte
+2. short
+3. int 
+4. long
+5. char
+6. float
+7. double
+9. boolean: 只能是 0 或者 1, 不能是别的值
+强制类型转换
+* DONE <2014-09-26 Fri>
+CLOSED: [2014-11-02 Sun 22:35]
+- State "DONE"       from ""           [2014-11-02 Sun 22:35]
+** 考试问题
+** static filed  and not-static filed : different
+static filed: 所有的实例变量相同的.
+not-static-filed: 对象的实例变量时不同.
+
+* DONE <2014-10-16 Thu> 考试复习
+CLOSED: [2014-11-02 Sun 22:35]
+- State "DONE"       from ""           [2014-11-02 Sun 22:35]
+1. member variable: 成员变量. Member variables in a class --- thess are called *Fields*.
+2. Variables in a methon or blocks of code ---thess are called *Local* *Variable*.
+3. Variables in method declartions --- these are called *paramnters*.
+4. Access modifiers:访问修饰符
+5. 方法命名: In multi-word names, the first letter of each of the second and following words should be capitalized.
+   example: getBackgroud() setX()
+6. 重载的时候不能定义 signature(标签) 相同,当时返回值不同的重载方法,这是以为java compiler在 compile的时候并不考虑返回值.
+7. java 不允许将方法传递到方法中,但是可以将对象传递到方法中.
+8. 任意数量的参数(arbitrary number of arguments), 使用varargs ellipsis(省略号!)
+定义任意参数的例子如下所示:
+#+BEGIN_SRC java
+public Polygon polygonFrom(Points... corners)
+#+END_SRC
+
+返回类型 方法名称(参数类型... 形参名称)
+* DONE <2014-11-02 S>
+CLOSED: [2014-11-02 Sun 23:50]
+- State "DONE"       from "TODO"       [2014-11-02 Sun 23:50]
+** 重载与私有方法
+note:注意在重载方法的时候,我们不能重载父类的private方法, 我们只能重载父类的
+非private方法.主要我们也可以重载protect修饰的方法.
+*
+** 遇到一个初始化数组在不同的地方初始化,当时编译的时候不同的地方.
+* DONE <2014-11-05 Wed>
+CLOSED: [2014-11-07 Fri 14:42]
+- State "DONE"       from ""           [2014-11-07 Fri 14:42]
+** 期中考试总结
+1. Hiding internal data from the outside world, and accessing it only through
+publicly exposed methods is konwn as data _encapsulation(封装)_
+2. A collection of methods with no implementation is called an _interface_.
+3. A  namespace that organizes classes and interfaces by functionality is 
+called a _package_.
+4. An _array_ is a container object that holds a fixed number of values of a
+single type.
+* DONE <2014-11-07 Fri>
+CLOSED: [2014-11-19 Wed 15:56]
+- State "DONE"       from ""           [2014-11-19 Wed 15:56]
+** collection容器
+** 考试题目
+1. Object 和 object 的区别
+2. Class 和 class 的区别
+3. 数据结构中的队列和容器中的队列的区别 
+* <2014-11-19 Wed>
+** java vs C++(java的特点)
+1. 简单
+2. 多进程
+3. 分布式程序
+4. 健壮性
+5. 安全性
+6. (指针,操作符重载)一些复杂的操作已经被去掉了.
+** class的定义
+Class只不过是一些描述联合在一起的例子的数据和行为
+** Diffrent Date types in java
+1. byte - 8bites 用于网络传输或者文件刘
+2. short - 16bites
+3. char - 16bites
+4. int - 32bietes
+5. floate - 32bites
+6. long - 64bites
+7. bouble - 64bites
+** Unicode
+ java 使用unicode 表示字符,只用这种方法可以表示世界上任何语言
+** cast (类型转换)
+java 使用cast来做类型转换. 一共有两种类型用来做类型转换
+1. 自动类型转换(automatic casting)
+2. 强制类型转换(explicit casting )显示的转换
+** Array
+An array is a group of fixed number of same type values.
+** break 的用法
+在java中break有两种用法
+1. 在switch语句中用来中断一个case
+2. 跳出一个循环(Loop)
+** java 长度的计算
+java中的数组的长度的计算方式是
+#+BEGIN_SRC java
+array.length
+#+END_SRC
+而不是使用
+#+BEGIN_SRC java
+array.length()
+#+END_SRC
+这是因为数组可以也可以看做一个类,这个类中没有length()方法,数组中有一个属性是
+记录数组长度的.
+** 数组的申明
+能在Loop中定义数组吗?
+切记不能在循环中定义数组
+** 关于java.lang.*
+java.lang.* 是默认被引入到每一个java文件中的.这个包中包含类型为:
+1. Object class
+2. Data type wrapper classes(数据类型包裹类)
+3. Math class
+4. String class
+5. System and Runtime classes
+6. Thread class
+7. Exception class
+8. Process class
+9. Class classes
+** 数组的定义
+数组可以使用一下的方式进行定义
+#+BEGIN_SRC java
+int arr[] = null;
+int arr[][] = new int arr[][];
+int arr[][] = new arr[][];
+int [] arr[] = new arr[][];
+#+END_SRC
+** 面向对象语言的四大特征
+1. 抽象
+2. 封装
+3. 继承
+4. 多台
+** 多态, 重写(override) 和 重载(overloading)
+- 多态: 是面向对象语言的四大特征之一, 具体什么具体的概念可以解释这个概念,重
+在自己的理解.
+- 重写(overrid): 顾名思义.重写就是重新写一个方法.常用于父类与子类之间
+典型的例子就是父类有一个方法,然后子类中也写一个相同的方法,但是方法内部的实现
+是不同.
+Note: 子类和父类的signature必须相同
+- 重载(overloading): 顾名思义;重载就是写了一个方法之后在写一个方法.
+典型的例子是在同一个类中,存在多个重名的方法,每个方法的名称相同,当时signature
+不同.这就可以实现JVM通过不同的形参来决定调用调用哪个方法.
+
+** 能够重载一个static方法吗?
+不能重载一个static方法,这是因为整个class中只能有一个static方法.所以说不能重载
+
+** 接口与抽象类的区别
+1. 可以定义的方法和属性是不同
+   - 抽象类可以在内部定义 not-static 和 not final的属性(也可以叫做域),可以定
+义public,protect and private方法.
+   - 接口 只能定义 public static final的属性(域),只能定义public的方法.
+2. 与继承结合不同(这个是最重要的区别,也是体现接口的作用的地方)
+   - 只能继承一个类,这个类可以是抽象类也可以是非抽象类,但必须是一个 
+   - 可以实现多个接口,即使两个类之间没有什么关系(继承的关系),也可以实现,所以
+我们一般通过接口实现多重继承.
